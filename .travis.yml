@@ -7,12 +7,11 @@ cache:
 
 env:
     global:
-        - CHECK_PHP_SYNTAX="false"
         - COVERAGE="false"
         - PHPUNIT_FLAGS="-v"
         - SYMFONY_PHPUNIT_DIR="$HOME/symfony-bridge/.phpunit"
         # needed to avoid some hard to fix deprecations
-        - SYMFONY_DEPRECATIONS_HELPER="8"
+        #- SYMFONY_DEPRECATIONS_HELPER="8"
 
 matrix:
     fast_finish: true
@@ -42,11 +41,9 @@ before_install:
     - if ! [ -v "$DEPENDENCIES" ]; then composer require --no-update ${DEPENDENCIES}; fi;
 
 install:
-    - if [[ "$CHECK_PHP_SYNTAX" == "true" ]]; then composer require --dev --no-update friendsofphp/php-cs-fixer; fi;
     - composer update ${COMPOSER_FLAGS} --prefer-dist --no-interaction
     - ./vendor/bin/simple-phpunit install
 
 script:
     - composer validate --strict --no-check-lock
     - ./vendor/bin/simple-phpunit $PHPUNIT_FLAGS --stop-on-failure
-    - if [[ "$CHECK_PHP_SYNTAX" == "true" ]]; then php vendor/bin/php-cs-fixer --no-interaction --dry-run --diff -v fix; fi;
