@@ -7,6 +7,8 @@ use Symfony\Component\Form\ChoiceList\LazyChoiceList;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Form\FormEvent;
 use Symfony\Component\Form\FormEvents;
+use Symfony\Component\Form\FormInterface;
+use Symfony\Component\Form\FormView;
 use Symfony\Component\HttpKernel\Kernel;
 use Symfony\Component\OptionsResolver\Options;
 use Symfony\Component\OptionsResolver\OptionsResolver;
@@ -21,13 +23,18 @@ class Entity2Type extends AbstractType
             $builder->addEventListener(FormEvents::PRE_SUBMIT, function (FormEvent $event) {
                 $choiceList = $event->getForm()->getConfig()->getAttribute('choice_list');
                 if ($choiceList instanceof LazyChoiceList) {
-                    $p = (new \ReflectionObject($choiceList))->getProperty('loaded');
-                    $p->setAccessible(true);
-                    $p->setValue($choiceList, false);
-                    $p->setAccessible(false);
+                    $loaded = (new \ReflectionObject($choiceList))->getProperty('loaded');
+                    $loaded->setAccessible(true);
+                    $loaded->setValue($choiceList, false);
+                    $loaded->setAccessible(false);
                 }
             });
         }
+    }
+
+    public function buildView(FormView $view, FormInterface $form, array $options)
+    {
+
     }
 
     public function configureOptions(OptionsResolver $resolver)
