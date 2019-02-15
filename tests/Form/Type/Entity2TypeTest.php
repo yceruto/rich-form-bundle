@@ -7,6 +7,7 @@ use Doctrine\Common\Persistence\ManagerRegistry;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Tools\SchemaTool;
 use Symfony\Bridge\Doctrine\Form\DoctrineOrmExtension;
+use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Bridge\Doctrine\Test\DoctrineTestHelper;
 use Symfony\Bridge\Doctrine\Tests\Fixtures\CompositeIntIdEntity;
 use Symfony\Bridge\Doctrine\Tests\Fixtures\SingleAssociationToIntIdEntity;
@@ -191,6 +192,9 @@ class Entity2TypeTest extends TypeTestCase
             'em' => 'default',
             'class' => self::SINGLE_IDENT_CLASS,
         ]);
+
+        $this->assertCount(0, $form->createView()->vars['choices']);
+
         $form->submit(null);
 
         $this->assertNull($form->getData());
@@ -205,6 +209,9 @@ class Entity2TypeTest extends TypeTestCase
             'class' => self::SINGLE_IDENT_CLASS,
             'multiple' => true,
         ]);
+
+        $this->assertCount(0, $form->createView()->vars['choices']);
+
         $form->submit(null);
 
         $collection = new ArrayCollection();
@@ -223,7 +230,11 @@ class Entity2TypeTest extends TypeTestCase
             'multiple' => true,
         ]);
         $form->setData($emptyArray);
+
+        $this->assertCount(0, $form->createView()->vars['choices']);
+
         $form->submit(null);
+
         $this->assertInternalType('array', $form->getData());
         $this->assertEquals([], $form->getData());
         $this->assertEquals([], $form->getNormData());
@@ -241,7 +252,11 @@ class Entity2TypeTest extends TypeTestCase
         ]);
         $existing = [0 => $entity1];
         $form->setData($existing);
+
+        $this->assertCount(1, $form->createView()->vars['choices']);
+
         $form->submit(null);
+
         $this->assertInternalType('array', $form->getData());
         $this->assertEquals([], $form->getData());
         $this->assertEquals([], $form->getNormData());
@@ -259,6 +274,9 @@ class Entity2TypeTest extends TypeTestCase
             'class' => self::SINGLE_IDENT_CLASS,
             'empty_data' => $emptyData,
         ]);
+
+        $this->assertCount(0, $form->createView()->vars['choices']);
+
         $form->submit(null);
 
         $this->assertSame($emptyData, $form->getViewData());

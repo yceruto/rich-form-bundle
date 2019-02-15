@@ -3,12 +3,30 @@
 namespace Yceruto\Bundle\RichFormBundle\Form\Type;
 
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\FormBuilderInterface;
+use Symfony\Component\Form\FormEvent;
+use Symfony\Component\Form\FormEvents;
+use Symfony\Component\HttpKernel\Kernel;
 use Symfony\Component\OptionsResolver\Options;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Yceruto\Bundle\RichFormBundle\Form\ChoiceList\Loader\Entity2LoaderDecorator;
 
 class Entity2Type extends AbstractType
 {
+    public function buildForm(FormBuilderInterface $builder, array $options)
+    {
+        if (Kernel::MAJOR_VERSION < 4) {
+            // Avoid choice list caching
+            $builder->addEventListener(FormEvents::PRE_SUBMIT, function (FormEvent $event) {
+                $choiceList = $event->getForm()->getConfig()->getAttribute('choice_list');
+                $p = (new \ReflectionObject($choiceList))->getProperty('loaded');
+                $p->setAccessible(true);
+                $p->setValue($choiceList, false);
+                $p->setAccessible(false);
+            });
+        }
+    }
+
     public function configureOptions(OptionsResolver $resolver)
     {
         $resolver->setNormalizer('expanded', function (Options $options, $expanded) {
