@@ -39,8 +39,8 @@ before_install:
 
 install:
     - composer update ${COMPOSER_FLAGS} --prefer-dist --no-interaction
-    - ./phpunit install
+    - ./vendor/bin/simple-phpunit install
 
 script:
     - composer validate --strict --no-check-lock
-    - ./phpunit -v --stop-on-failure
+    - ./vendor/bin/simple-phpunit -v --stop-on-failure
