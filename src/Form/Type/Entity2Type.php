@@ -34,7 +34,7 @@ class Entity2Type extends AbstractType
     {
         $resolver->setNormalizer('expanded', function (Options $options, $expanded) {
             if (true === $expanded) {
-                throw new \LogicException('Enabling the "expanded" option is not supported.');
+                throw new \LogicException('The "expanded" option is not supported.');
             }
 
             return $expanded;
