@@ -3,6 +3,7 @@
 namespace Yceruto\Bundle\RichFormBundle\Form\Type;
 
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\ChoiceList\LazyChoiceList;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Form\FormEvent;
 use Symfony\Component\Form\FormEvents;
@@ -16,13 +17,15 @@ class Entity2Type extends AbstractType
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
         if (Kernel::MAJOR_VERSION < 4) {
-            // Avoid choice list caching
+            // Avoid choice list caching in LazyChoiceList - Symfony 3.4
             $builder->addEventListener(FormEvents::PRE_SUBMIT, function (FormEvent $event) {
                 $choiceList = $event->getForm()->getConfig()->getAttribute('choice_list');
-                $p = (new \ReflectionObject($choiceList))->getProperty('loaded');
-                $p->setAccessible(true);
-                $p->setValue($choiceList, false);
-                $p->setAccessible(false);
+                if ($choiceList instanceof LazyChoiceList) {
+                    $p = (new \ReflectionObject($choiceList))->getProperty('loaded');
+                    $p->setAccessible(true);
+                    $p->setValue($choiceList, false);
+                    $p->setAccessible(false);
+                }
             });
         }
     }
