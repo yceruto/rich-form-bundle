@@ -17,7 +17,7 @@ class Entity2Type extends AbstractType
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
         if (Kernel::MAJOR_VERSION < 4) {
-            // Avoid choice list caching in LazyChoiceList - Symfony 3.4
+            // Avoid caching of the choice list in LazyChoiceList - Symfony 3.4
             $builder->addEventListener(FormEvents::PRE_SUBMIT, function (FormEvent $event) {
                 $choiceList = $event->getForm()->getConfig()->getAttribute('choice_list');
                 if ($choiceList instanceof LazyChoiceList) {
