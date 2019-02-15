@@ -15,6 +15,7 @@ class Entity2LoaderDecorator implements ChoiceLoaderInterface
      * @var ChoiceListInterface
      */
     private $choiceList;
+    private $newChoices = false;
 
     function __construct(ChoiceLoaderInterface $decoratedLoader)
     {
@@ -23,24 +24,35 @@ class Entity2LoaderDecorator implements ChoiceLoaderInterface
 
     public function loadChoiceList($value = null)
     {
-        if (null !== $this->choiceList) {
+        if (null !== $this->choiceList && !$this->newChoices) {
             return $this->choiceList;
         }
+
+        $this->newChoices = false;
 
         return $this->choiceList = new ArrayChoiceList($this->choices, $value);
     }
 
     public function loadChoicesForValues(array $values, $value = null)
     {
-        return $this->choices = $this->decoratedLoader->loadChoicesForValues($values, $value);
+        if ($this->choices !== $choices = $this->decoratedLoader->loadChoicesForValues($values, $value)) {
+            $this->newChoices = true;
+        }
+
+        return $this->choices = $choices;
     }
 
     public function loadValuesForChoices(array $choices, $value = null)
     {
         if ([] === $values = $this->decoratedLoader->loadValuesForChoices($choices, $value)) {
-            $this->choices = [];
+            $newChoices = [];
         } else {
-            $this->choices = $choices;
+            $newChoices = $choices;
+        }
+
+        if ($this->choices !== $newChoices) {
+            $this->choices = $newChoices;
+            $this->newChoices = true;
         }
 
         return $values;
