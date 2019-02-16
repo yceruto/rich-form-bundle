@@ -34,7 +34,11 @@ class Entity2Type extends AbstractType
 
     public function buildView(FormView $view, FormInterface $form, array $options)
     {
-
+        // build context
+        //  * dql, params, types (from query_builder option)
+        //  * max_results
+        //  *
+        //
     }
 
     public function configureOptions(OptionsResolver $resolver)

@@ -151,6 +151,24 @@ class Entity2TypeTest extends TypeTestCase
         $this->assertEquals([1 => new ChoiceView($entity1, '1', 'Foo')], $field->createView()->vars['choices']);
     }
 
+    public function testSingleChoiceWithCustomChoiceValue()
+    {
+        $entity1 = new SingleIntIdEntity(1, 'Foo');
+        $entity2 = new SingleIntIdEntity(2, 'Bar');
+
+        $this->persist([$entity1, $entity2]);
+
+        $field = $this->factory->createNamed('name', static::TESTED_TYPE, $entity1, [
+            'em' => 'default',
+            'class' => self::SINGLE_IDENT_CLASS,
+            'choice_label' => 'name',
+            'choice_value' => 'name',
+        ]);
+
+        $this->assertCount(1, $field->createView()->vars['choices']);
+        $this->assertEquals(['Foo' => new ChoiceView($entity1, 'Foo', 'Foo')], $field->createView()->vars['choices']);
+    }
+
     public function testEmptyChoicesWithNullDataMultiple()
     {
         $entity1 = new SingleIntIdEntity(1, 'Foo');
