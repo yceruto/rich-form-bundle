@@ -67,7 +67,7 @@ class Entity2Type extends AbstractType
             $this->session->set(self::SESSION_ID.$hash, $context);
         }
 
-        $view->vars['entity2']['hash'] = $hash;
+        $view->vars['entity2']['query_hash'] = $hash;
     }
 
     public function configureOptions(OptionsResolver $resolver): void

@@ -5,7 +5,7 @@
             $('#{{ id }}').select2({
                 theme: '{{ select2.options.theme|default('default') }}',
                 ajax: {
-                    url: '{{ path('rich_form_entity2_search', { hash: query_hash })|raw }}',
+                    url: '{{ path('rich_form_entity2_search', { hash: entity2.query_hash })|raw }}',
                     dataType: 'json',
                     delay: {{ select2.options.ajax.delay }},
                     data: function (params) {
