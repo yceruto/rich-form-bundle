@@ -14,5 +14,7 @@ class RichFormExtension extends Extension
         $loader = new XmlFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));
         $loader->load('services.xml');
         $loader->load('form.xml');
+        // add config to disable it
+        $loader->load('select2_extension.xml');
     }
 }
