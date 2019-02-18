@@ -49,7 +49,7 @@ class Entity2Type extends AbstractType
     public function buildView(FormView $view, FormInterface $form, array $options): void
     {
         $autocomplete = $options['autocomplete'];
-        $hash = null;
+        $queryHash = null;
 
         if (null !== $this->session) {
             $context = [
@@ -63,11 +63,11 @@ class Entity2Type extends AbstractType
                 $context['qb_parts'] = $this->getQueryBuilderPartsForSerialize($options['query_builder']);
             }
 
-            $hash = CachingFactoryDecorator::generateHash($context, 'fromEntity2');
-            $this->session->set(self::SESSION_ID.$hash, $context);
+            $queryHash = CachingFactoryDecorator::generateHash($context, 'entity2_query');
+            $this->session->set(self::SESSION_ID.$queryHash, $context);
         }
 
-        $view->vars['entity2']['query_hash'] = $hash;
+        $view->vars['entity2']['query_hash'] = $queryHash;
     }
 
     public function configureOptions(OptionsResolver $resolver): void
