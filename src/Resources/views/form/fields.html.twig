@@ -1,3 +1,44 @@
-{% block entity2_widget %}
+{% block entity2_select2_widget %}
     {{ form_widget(form) }}
+    <script>
+        $(function () {
+            $('#{{ id }}').select2({
+                theme: '{{ select2.options.theme|default('default') }}',
+                ajax: {
+                    url: '{{ path('rich_form_entity2_search', { hash: query_hash })|raw }}',
+                    dataType: 'json',
+                    delay: {{ select2.options.ajax.delay }},
+                    data: function (params) {
+                        return { 'query': params.term, 'page': params.page };
+                    },
+                    // to indicate that infinite scrolling can be used
+                    processResults: function (data, params) {
+                        return {
+                            results: data.results,
+                            pagination: {
+                                more: data.has_next_page
+                            }
+                        };
+                    },
+                    cache: true
+                },
+                placeholder: '{{ placeholder }}',
+                allowClear: {{ select2.options.allow_clear ? 'true' : 'false' }},
+                minimumInputLength: {{ select2.options.minimum_input_length }},
+                {% if select2.options.result_template or select2.options.selection_template %}
+                escapeMarkup: function (markup) { return markup; },
+                {% if select2.options.result_template %}
+                templateResult: function (object) {
+                    return object.id ? '{{ select2.options.result_template|raw }}'.render(object) : object.text;
+                },
+                {% endif %}
+                {% if select2.options.selection_template %}
+                templateSelection: function (object) {
+                    return object.text ? '{{ select2.options.selection_template|raw }}'.render(object) : '';
+                }
+                {% endif %}
+                {% endif %}
+            });
+        })
+    </script>
 {% endblock %}

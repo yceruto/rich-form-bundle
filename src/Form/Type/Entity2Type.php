@@ -2,21 +2,35 @@
 
 namespace Yceruto\Bundle\RichFormBundle\Form\Type;
 
+use Doctrine\ORM\QueryBuilder;
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\ChoiceList\Factory\CachingFactoryDecorator;
 use Symfony\Component\Form\ChoiceList\LazyChoiceList;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Form\FormEvent;
 use Symfony\Component\Form\FormEvents;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\Form\FormView;
+use Symfony\Component\HttpFoundation\Session\Session;
 use Symfony\Component\HttpKernel\Kernel;
+use Symfony\Component\OptionsResolver\Exception\InvalidArgumentException;
 use Symfony\Component\OptionsResolver\Options;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Yceruto\Bundle\RichFormBundle\Form\ChoiceList\Loader\Entity2LoaderDecorator;
+use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 
 class Entity2Type extends AbstractType
 {
-    public function buildForm(FormBuilderInterface $builder, array $options)
+    public const SESSION_ID = 'richform.entity2.';
+
+    private $session;
+
+    public function __construct(Session $session = null)
+    {
+        $this->session = $session;
+    }
+
+    public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         if (Kernel::MAJOR_VERSION < 4) {
             // Avoid caching of the choice list in LazyChoiceList - Symfony 3.4
@@ -32,41 +46,102 @@ class Entity2Type extends AbstractType
         }
     }
 
-    public function buildView(FormView $view, FormInterface $form, array $options)
+    public function buildView(FormView $view, FormInterface $form, array $options): void
     {
-        // build context
-        //  * dql, params, types (from query_builder option)
-        //  * max_results
-        //  *
-        //
+        $autocomplete = $options['autocomplete'];
+        $hash = null;
+
+        if (null !== $this->session) {
+            $context = [
+                'em' => $autocomplete['manager_name'],
+                'class' => $options['class'],
+                'max_results' => $autocomplete['max_results'],
+                'search_fields' => $autocomplete['search_fields'],
+            ];
+
+            if ($options['query_builder']) {
+                $context['qb_parts'] = $this->getQueryBuilderPartsForSerialize($options['query_builder']);
+            }
+
+            $hash = CachingFactoryDecorator::generateHash($context, 'fromEntity2');
+            $this->session->set(self::SESSION_ID.$hash, $context);
+        }
+
+        $view->vars['entity2']['hash'] = $hash;
     }
 
-    public function configureOptions(OptionsResolver $resolver)
+    public function configureOptions(OptionsResolver $resolver): void
     {
-        $resolver->setNormalizer('expanded', function (Options $options, $expanded) {
+        $extendedNormalizer = function (Options $options, $expanded) {
             if (true === $expanded) {
                 throw new \LogicException('The "expanded" option is not supported.');
             }
 
             return $expanded;
-        });
+        };
 
-        $resolver->setNormalizer('choice_loader', function (Options $options, $loader) {
+        $choiceLoaderNormalizer = function (Options $options, $loader) {
             if (null === $loader) {
                 return null;
             }
 
             return new Entity2LoaderDecorator($loader);
+        };
+
+        $resolver->setDefault('autocomplete', function (OptionsResolver $resolver, Options $parent) {
+            $resolver->setDefaults([
+                'max_results' => 10,
+                'search_fields' => null,
+                'manager_name' => function (Options $options) use ($parent) {
+                    return \is_string($parent['em']) ? $parent['em'] : null;
+                },
+            ]);
+
+            $resolver->setAllowedTypes('max_results', ['null', 'int']);
+            $resolver->setAllowedTypes('search_fields', ['null', 'array']);
+            $resolver->setAllowedTypes('manager_name', ['null', 'string']);
         });
+
+        $resolver->setNormalizer('expanded', $extendedNormalizer);
+        $resolver->setNormalizer('choice_loader', $choiceLoaderNormalizer);
     }
 
-    public function getBlockPrefix()
+    public function getBlockPrefix(): string
     {
         return 'entity2';
     }
 
-    public function getParent()
+    public function getParent(): string
     {
-        return 'Symfony\Bridge\Doctrine\Form\Type\EntityType';
+        return EntityType::class;
+    }
+
+    public function getQueryBuilderPartsForSerialize(QueryBuilder $queryBuilder): array
+    {
+        $parameters = [];
+        foreach ($queryBuilder->getParameters() as $parameter) {
+            $value = $parameter->getValue();
+            if (\is_object($value)) {
+                throw new InvalidArgumentException('Expected a scalar value.');
+            }
+            if (\is_array($value)) {
+                array_walk_recursive($value, function ($v) {
+                    if (\is_object($v)) {
+                        throw new InvalidArgumentException('Expected a scalar value.');
+                    }
+                });
+            }
+
+            $parameters[] = [
+                'name' => $parameter->getName(),
+                'value' => $value,
+                'type' => $parameter->getType(),
+            ];
+        }
+
+        return [
+            'dql_parts' => array_filter($queryBuilder->getDQLParts()),
+            'parameters' => $parameters,
+        ];
     }
 }
