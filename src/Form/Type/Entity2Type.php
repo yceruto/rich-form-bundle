@@ -48,15 +48,11 @@ class Entity2Type extends AbstractType
 
     public function buildView(FormView $view, FormInterface $form, array $options): void
     {
-        $autocomplete = $options['autocomplete'];
         $queryHash = null;
 
         if (null !== $this->session) {
-            $context = [
-                'em' => $autocomplete['em'],
+            $context = $options['autocomplete'] + [
                 'class' => $options['class'],
-                'max_results' => $autocomplete['max_results'],
-                'search_fields' => $autocomplete['search_fields'],
             ];
 
             if ($options['query_builder']) {
@@ -89,15 +85,39 @@ class Entity2Type extends AbstractType
         };
 
         $resolver->setDefault('autocomplete', function (OptionsResolver $resolver, Options $parent) {
+            $dqlPartNormalizer = function (Options $options, $dqlPart) use ($parent) {
+                if (null !== $dqlPart && null !== $parent['query_builder']) {
+                    throw new \LogicException('DQL options cannot be used in combination with query_builder option, use one or the other but not both.');
+                }
+
+                return $dqlPart;
+            };
+
             $resolver->setDefaults([
                 'em' => null,
                 'max_results' => 10,
                 'search_fields' => null,
+                'dql_select' => null,
+                'dql_from_alias' => null,
+                'dql_join' => null,
+                'dql_where' => null,
+                'dql_order_by' => null,
             ]);
 
             $resolver->setAllowedTypes('em', ['null', 'string']);
             $resolver->setAllowedTypes('max_results', ['null', 'int']);
-            $resolver->setAllowedTypes('search_fields', ['null', 'array']);
+            $resolver->setAllowedTypes('search_fields', ['null', 'string', 'string[]']);
+            $resolver->setAllowedTypes('dql_select', ['null', 'string', 'string[]']);
+            $resolver->setAllowedTypes('dql_from_alias', ['null', 'string']);
+            $resolver->setAllowedTypes('dql_join', ['null', 'string', 'string[]']);
+            $resolver->setAllowedTypes('dql_where', ['null', 'string', 'string[]']);
+            $resolver->setAllowedTypes('dql_order_by', ['null', 'string', 'string[]']);
+
+            $resolver->setNormalizer('dql_select', $dqlPartNormalizer);
+            $resolver->setNormalizer('dql_from_alias', $dqlPartNormalizer);
+            $resolver->setNormalizer('dql_join', $dqlPartNormalizer);
+            $resolver->setNormalizer('dql_where', $dqlPartNormalizer);
+            $resolver->setNormalizer('dql_order_by', $dqlPartNormalizer);
         });
 
         $resolver->setNormalizer('expanded', $extendedNormalizer);
