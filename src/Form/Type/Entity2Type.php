@@ -120,12 +120,12 @@ class Entity2Type extends AbstractType
         foreach ($queryBuilder->getParameters() as $parameter) {
             $value = $parameter->getValue();
             if (\is_object($value)) {
-                throw new InvalidArgumentException('Expected a scalar value.');
+                throw new InvalidArgumentException('The parameter value must be scalar, object given.');
             }
             if (\is_array($value)) {
                 array_walk_recursive($value, function ($v) {
                     if (\is_object($v)) {
-                        throw new InvalidArgumentException('Expected a scalar value.');
+                        throw new InvalidArgumentException('The parameter value must be scalar, object given.');
                     }
                 });
             }
