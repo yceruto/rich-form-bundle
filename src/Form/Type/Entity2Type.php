@@ -53,7 +53,7 @@ class Entity2Type extends AbstractType
 
         if (null !== $this->session) {
             $context = [
-                'em' => $autocomplete['manager_name'],
+                'em' => $autocomplete['em'],
                 'class' => $options['class'],
                 'max_results' => $autocomplete['max_results'],
                 'search_fields' => $autocomplete['search_fields'],
@@ -90,16 +90,14 @@ class Entity2Type extends AbstractType
 
         $resolver->setDefault('autocomplete', function (OptionsResolver $resolver, Options $parent) {
             $resolver->setDefaults([
+                'em' => null,
                 'max_results' => 10,
                 'search_fields' => null,
-                'manager_name' => function (Options $options) use ($parent) {
-                    return \is_string($parent['em']) ? $parent['em'] : null;
-                },
             ]);
 
+            $resolver->setAllowedTypes('em', ['null', 'string']);
             $resolver->setAllowedTypes('max_results', ['null', 'int']);
             $resolver->setAllowedTypes('search_fields', ['null', 'array']);
-            $resolver->setAllowedTypes('manager_name', ['null', 'string']);
         });
 
         $resolver->setNormalizer('expanded', $extendedNormalizer);

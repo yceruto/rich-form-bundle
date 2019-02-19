@@ -5,6 +5,7 @@ namespace Yceruto\Bundle\RichFormBundle\Tests\Form\Type;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Persistence\ManagerRegistry;
 use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\Tools\SchemaTool;
 use Symfony\Bridge\Doctrine\Form\DoctrineOrmExtension;
 use Symfony\Bridge\Doctrine\Test\DoctrineTestHelper;
@@ -12,8 +13,14 @@ use Symfony\Bridge\Doctrine\Tests\Fixtures\CompositeIntIdEntity;
 use Symfony\Bridge\Doctrine\Tests\Fixtures\SingleAssociationToIntIdEntity;
 use Symfony\Bridge\Doctrine\Tests\Fixtures\SingleIntIdEntity;
 use Symfony\Bridge\Doctrine\Tests\Fixtures\SingleIntIdNoToStringEntity;
+use Symfony\Component\Form\ChoiceList\Factory\CachingFactoryDecorator;
 use Symfony\Component\Form\ChoiceList\View\ChoiceView;
 use Symfony\Component\Form\Test\TypeTestCase;
+use Symfony\Component\HttpFoundation\Session\Attribute\AttributeBag;
+use Symfony\Component\HttpFoundation\Session\Flash\FlashBag;
+use Symfony\Component\HttpFoundation\Session\Session;
+use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
+use Symfony\Component\HttpFoundation\Session\Storage\SessionStorageInterface;
 use Yceruto\Bundle\RichFormBundle\Form\Type\Entity2Type;
 
 class Entity2TypeTest extends TypeTestCase
@@ -39,10 +46,22 @@ class Entity2TypeTest extends TypeTestCase
      */
     private $emRegistry;
 
+    /**
+     * @var SessionStorageInterface
+     */
+    private $storage;
+
+    /**
+     * @var Session
+     */
+    private $session;
+
     protected function setUp()
     {
         $this->em = DoctrineTestHelper::createTestEntityManager();
         $this->emRegistry = $this->createRegistryMock('default', $this->em);
+        $this->storage = new MockArraySessionStorage();
+        $this->session = new Session($this->storage, new AttributeBag(), new FlashBag());
 
         parent::setUp();
 
@@ -69,33 +88,41 @@ class Entity2TypeTest extends TypeTestCase
         }
     }
 
-    protected function createRegistryMock($name, $em)
-    {
-        $registry = $this->getMockBuilder('Doctrine\Common\Persistence\ManagerRegistry')->getMock();
-        $registry->expects($this->any())
-            ->method('getManager')
-            ->with($this->equalTo($name))
-            ->will($this->returnValue($em));
-
-        return $registry;
-    }
-
     protected function tearDown()
     {
         parent::tearDown();
 
         $this->em = null;
         $this->emRegistry = null;
+        $this->storage = null;
+        $this->session = null;
     }
 
-    protected function getExtensions()
+    protected function createRegistryMock($name, $em)
+    {
+        $registry = $this->getMockBuilder(ManagerRegistry::class)->getMock();
+        $registry->method('getManager')
+            ->with($this->equalTo($name))
+            ->willReturn($em);
+
+        return $registry;
+    }
+
+    protected function getExtensions(): array
     {
         return array_merge(parent::getExtensions(), [
             new DoctrineOrmExtension($this->emRegistry),
         ]);
     }
 
-    protected function persist(array $entities)
+    protected function getTypes(): array
+    {
+        $class = static::TESTED_TYPE;
+
+        return [new $class($this->session)];
+    }
+
+    protected function persist(array $entities): void
     {
         foreach ($entities as $entity) {
             $this->em->persist($entity);
@@ -109,7 +136,7 @@ class Entity2TypeTest extends TypeTestCase
     /**
      * @expectedException \LogicException
      */
-    public function testExpandedOptionIsNotSupported()
+    public function testExpandedOptionIsNotSupported(): void
     {
         $this->factory->createNamed('name', static::TESTED_TYPE, null, [
             'em' => 'default',
@@ -118,7 +145,7 @@ class Entity2TypeTest extends TypeTestCase
         ]);
     }
 
-    public function testEmptyChoicesWithNullData()
+    public function testEmptyChoicesWithNullData(): void
     {
         $entity1 = new SingleIntIdEntity(1, 'Foo');
         $entity2 = new SingleIntIdEntity(2, 'Bar');
@@ -134,7 +161,7 @@ class Entity2TypeTest extends TypeTestCase
         $this->assertCount(0, $field->createView()->vars['choices']);
     }
 
-    public function testSingleChoiceEqualToPassedData()
+    public function testSingleChoiceEqualToPassedData(): void
     {
         $entity1 = new SingleIntIdEntity(1, 'Foo');
         $entity2 = new SingleIntIdEntity(2, 'Bar');
@@ -151,7 +178,7 @@ class Entity2TypeTest extends TypeTestCase
         $this->assertEquals([1 => new ChoiceView($entity1, '1', 'Foo')], $field->createView()->vars['choices']);
     }
 
-    public function testSingleChoiceWithCustomChoiceValue()
+    public function testSingleChoiceWithCustomChoiceValue(): void
     {
         $entity1 = new SingleIntIdEntity(1, 'Foo');
         $entity2 = new SingleIntIdEntity(2, 'Bar');
@@ -169,7 +196,7 @@ class Entity2TypeTest extends TypeTestCase
         $this->assertEquals(['Foo' => new ChoiceView($entity1, 'Foo', 'Foo')], $field->createView()->vars['choices']);
     }
 
-    public function testEmptyChoicesWithNullDataMultiple()
+    public function testEmptyChoicesWithNullDataMultiple(): void
     {
         $entity1 = new SingleIntIdEntity(1, 'Foo');
         $entity2 = new SingleIntIdEntity(2, 'Bar');
@@ -185,7 +212,7 @@ class Entity2TypeTest extends TypeTestCase
         $this->assertCount(0, $field->createView()->vars['choices']);
     }
 
-    public function testSingleChoiceEqualToPassedDataMultiple()
+    public function testSingleChoiceEqualToPassedDataMultiple(): void
     {
         $entity1 = new SingleIntIdEntity(1, 'Foo');
         $entity2 = new SingleIntIdEntity(2, 'Bar');
@@ -203,7 +230,7 @@ class Entity2TypeTest extends TypeTestCase
         $this->assertEquals([1 => new ChoiceView($entity1, '1', 'Foo')], $field->createView()->vars['choices']);
     }
 
-    public function testSubmitNull()
+    public function testSubmitNull(): void
     {
         $form = $this->factory->create(static::TESTED_TYPE, null, [
             'em' => 'default',
@@ -219,7 +246,7 @@ class Entity2TypeTest extends TypeTestCase
         $this->assertSame('', $form->getViewData(), 'View data is always a string');
     }
 
-    public function testSubmitNullMultiple()
+    public function testSubmitNullMultiple(): void
     {
         $form = $this->factory->create(static::TESTED_TYPE, null, [
             'em' => 'default',
@@ -238,7 +265,7 @@ class Entity2TypeTest extends TypeTestCase
         $this->assertSame([], $form->getViewData(), 'View data is always an array');
     }
 
-    public function testSetDataEmptyArraySubmitNullMultiple()
+    public function testSetDataEmptyArraySubmitNullMultiple(): void
     {
         $emptyArray = [];
         $form = $this->factory->create(static::TESTED_TYPE, null, [
@@ -258,7 +285,7 @@ class Entity2TypeTest extends TypeTestCase
         $this->assertSame([], $form->getViewData(), 'View data is always an array');
     }
 
-    public function testSetDataNonEmptyArraySubmitNullMultiple()
+    public function testSetDataNonEmptyArraySubmitNullMultiple(): void
     {
         $entity1 = new SingleIntIdEntity(1, 'Foo');
         $this->persist([$entity1]);
@@ -280,7 +307,7 @@ class Entity2TypeTest extends TypeTestCase
         $this->assertSame([], $form->getViewData(), 'View data is always an array');
     }
 
-    public function testSubmitNullUsesDefaultEmptyData()
+    public function testSubmitNullUsesDefaultEmptyData(): void
     {
         $emptyData = '1';
         $entity1 = new SingleIntIdEntity(1, 'Foo');
@@ -301,7 +328,7 @@ class Entity2TypeTest extends TypeTestCase
         $this->assertSame($entity1, $form->getData());
     }
 
-    public function testSubmitNullMultipleUsesDefaultEmptyData()
+    public function testSubmitNullMultipleUsesDefaultEmptyData(): void
     {
         $emptyData = ['1'];
         $entity1 = new SingleIntIdEntity(1, 'Foo');
@@ -325,7 +352,7 @@ class Entity2TypeTest extends TypeTestCase
         $this->assertEquals($collection, $form->getData());
     }
 
-    public function testSubmitMultipleNonExpandedSingleIdentifier()
+    public function testSubmitMultipleNonExpandedSingleIdentifier(): void
     {
         $entity1 = new SingleIntIdEntity(1, 'Foo');
         $entity2 = new SingleIntIdEntity(2, 'Bar');
@@ -351,7 +378,7 @@ class Entity2TypeTest extends TypeTestCase
         $this->assertSame(['1', '3'], $form->getViewData());
     }
 
-    public function testSubmitMultipleNonExpandedSingleAssocIdentifier()
+    public function testSubmitMultipleNonExpandedSingleAssocIdentifier(): void
     {
         $innerEntity1 = new SingleIntIdNoToStringEntity(1, 'InFoo');
         $innerEntity2 = new SingleIntIdNoToStringEntity(2, 'InBar');
@@ -381,7 +408,7 @@ class Entity2TypeTest extends TypeTestCase
         $this->assertSame(['1', '3'], $form->getViewData());
     }
 
-    public function testSubmitMultipleNonExpandedSingleIdentifierForExistingData()
+    public function testSubmitMultipleNonExpandedSingleIdentifierForExistingData(): void
     {
         $entity1 = new SingleIntIdEntity(1, 'Foo');
         $entity2 = new SingleIntIdEntity(2, 'Bar');
@@ -413,7 +440,7 @@ class Entity2TypeTest extends TypeTestCase
         $this->assertSame(['1', '3'], $form->getViewData());
     }
 
-    public function testSubmitMultipleNonExpandedCompositeIdentifier()
+    public function testSubmitMultipleNonExpandedCompositeIdentifier(): void
     {
         $entity1 = new CompositeIntIdEntity(10, 20, 'Foo');
         $entity2 = new CompositeIntIdEntity(30, 40, 'Bar');
@@ -440,7 +467,7 @@ class Entity2TypeTest extends TypeTestCase
         $this->assertSame(['0', '2'], $form->getViewData());
     }
 
-    public function testSubmitMultipleNonExpandedCompositeIdentifierExistingData()
+    public function testSubmitMultipleNonExpandedCompositeIdentifierExistingData(): void
     {
         $entity1 = new CompositeIntIdEntity(10, 20, 'Foo');
         $entity2 = new CompositeIntIdEntity(30, 40, 'Bar');
@@ -470,5 +497,46 @@ class Entity2TypeTest extends TypeTestCase
         // same object still, useful if it is a PersistentCollection
         $this->assertSame($existing, $form->getData());
         $this->assertSame(['0', '2'], $form->getViewData());
+    }
+
+    public function testSerializedContextForAutocompleteOption(): void
+    {
+        $entity1 = new SingleIntIdEntity(1, 'Foo');
+        $entity2 = new SingleIntIdEntity(2, 'Bar');
+        $entity3 = new SingleIntIdEntity(3, 'Baz');
+
+        $this->persist([$entity1, $entity2, $entity3]);
+
+        /** @var Entity2Type $type */
+        $type = static::TESTED_TYPE;
+        $view = $this->factory->createNamed('name', $type, null, [
+            'em' => 'default',
+            'class' => self::SINGLE_IDENT_CLASS,
+            'choice_label' => 'name',
+            'query_builder' => function (EntityRepository $r) use (&$queryBuilder) {
+                return $queryBuilder = $r->createQueryBuilder('entity')->where('entity.phoneNumbers is not null');
+            },
+            'autocomplete' => [
+                'em' => 'default',
+                'max_results' => 15,
+                'search_fields' => ['name'],
+            ],
+        ])->createView();
+
+        $context = [
+            'em' => 'default',
+            'class' => self::SINGLE_IDENT_CLASS,
+            'max_results' => 15,
+            'search_fields' => ['name'],
+            'qb_parts' => [
+                'dql_parts' => array_filter($queryBuilder->getDQLParts()),
+                'parameters' => [],
+            ],
+        ];
+        $queryHash = CachingFactoryDecorator::generateHash($context, 'entity2_query');
+
+        $this->assertSame($queryHash, $view->vars['entity2']['query_hash']);
+        $this->assertTrue($this->session->has($type::SESSION_ID.$queryHash));
+        $this->assertSame($context, $this->session->get($type::SESSION_ID.$queryHash));
     }
 }
