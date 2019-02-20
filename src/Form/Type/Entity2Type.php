@@ -17,6 +17,7 @@ use Symfony\Component\HttpKernel\Kernel;
 use Symfony\Component\OptionsResolver\Exception\InvalidArgumentException;
 use Symfony\Component\OptionsResolver\Options;
 use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Component\PropertyAccess\PropertyPath;
 use Yceruto\Bundle\RichFormBundle\Form\ChoiceList\Loader\Entity2LoaderDecorator;
 
 class Entity2Type extends AbstractType
@@ -54,6 +55,14 @@ class Entity2Type extends AbstractType
             $autocompleteOptions = $options['autocomplete'] + [
                 'class' => $options['class'],
             ];
+
+            if (\is_string($options['choice_label'])) {
+                $autocompleteOptions['text'] = $options['choice_label'];
+            } elseif ($options['choice_label'] instanceof PropertyPath) {
+                $autocompleteOptions['text'] = (string) $options['choice_label'];
+            } else {
+                $autocompleteOptions['text'] = null;
+            }
 
             if ($options['query_builder']) {
                 $autocompleteOptions['qb_parts'] = $this->getQueryBuilderPartsForSerialize($options['query_builder']);

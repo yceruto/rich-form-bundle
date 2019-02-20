@@ -29,7 +29,7 @@ class Entity2SearchAction
         $searchQuery = $request->query->get('query');
 
         if (null === $searchQuery || '' === $searchQuery) {
-            return new JsonResponse([]);
+            return new JsonResponse(['results' => [], 'has_next_page' => false]);
         }
 
         $options = $this->getOptions($request, $hash);
@@ -91,11 +91,31 @@ class Entity2SearchAction
 
         /* @var ClassMetadata $classMetadata */
         $classMetadata = $em->getClassMetadata($options['class']);
+        $fieldNames = (array) ($options['search_fields'] ?? $classMetadata->getFieldNames());
+        $fields = $this->getSearchableFields($fieldNames, $classMetadata);
 
-        if (null === $options['search_fields']) {
-            // ... search by all fields (use Doctrine metadata)
-        } else {
-            // ... search by configured fields (use Doctrine metadata)
+        $rootAlias = current($qb->getRootAliases());
+
+        foreach ($fields as $fieldName => $fieldMapping) {
+            // this complex condition is needed to avoid issues on PostgreSQL databases
+            if (
+                ($fieldMapping['is_small_integer_field'] && $isSearchQuerySmallInteger) ||
+                ($fieldMapping['is_integer_field'] && $isSearchQueryInteger) ||
+                ($fieldMapping['is_numeric_field'] && $isSearchQueryNumeric)
+            ) {
+                $qb->orWhere(\sprintf('%s.%s = :numeric_query', $rootAlias, $fieldName));
+                // adding '0' turns the string into a numeric value
+                $qb->setParameter('numeric_query', 0 + $searchQuery);
+            } elseif ($isSearchQueryUuid && $fieldMapping['is_guid_field']) {
+                $qb->orWhere(\sprintf('%s.%s = :uuid_query', $rootAlias, $fieldName));
+                $qb->setParameter('uuid_query', $searchQuery);
+            } elseif ($fieldMapping['is_text_field']) {
+                $qb->orWhere(\sprintf('LOWER(%s.%s) LIKE :fuzzy_query', $rootAlias, $fieldName));
+                $qb->setParameter('fuzzy_query', '%'.$lowerSearchQuery.'%');
+
+                $qb->orWhere(\sprintf('LOWER(%s.%s) IN (:words_query)', $rootAlias, $fieldName));
+                $qb->setParameter('words_query', \explode(' ', $lowerSearchQuery));
+            }
         }
 
         return $qb;
@@ -122,8 +142,9 @@ class Entity2SearchAction
 
     private function createResults(int $page, QueryBuilder $qb, array $options): array
     {
-        $classMetadata = $qb->getEntityManager()->getClassMetadata($options['class']);
-        $idReader = new IdReader($options['em'], $classMetadata);
+        $em = $qb->getEntityManager();
+        $classMetadata = $em->getClassMetadata($options['class']);
+        $idReader = new IdReader($em, $classMetadata);
 
         $qb->setFirstResult($page * $options['max_results'] - $options['max_results']);
         $qb->setMaxResults($options['max_results']);
@@ -135,10 +156,10 @@ class Entity2SearchAction
         foreach ($paginator as $entity) {
             $data = [
                 'id' => $idReader->getIdValue($entity),
-                'text' => (string) $entity,
+                'text' => $options['text'] ? $this->propertyAccessor->getValue($entity, $options['text']) : (string) $entity,
             ];
 
-            if (null === $options['result_fields']) {
+            if (null !== $options['result_fields']) {
                 foreach ((array) $options['result_fields'] as $field) {
                     $data[$field] = $this->propertyAccessor->getValue($entity, $field);
                 }
@@ -148,5 +169,41 @@ class Entity2SearchAction
         }
 
         return $results;
+    }
+
+    private function getSearchableFields(array $fieldNames, ClassMetadata $classMetadata): array
+    {
+        $fields = [];
+
+        foreach ($fieldNames as $fieldName) {
+            $fieldMapping = $this->getFieldMapping($fieldName, $classMetadata);
+
+            if ($fieldMapping['is_searchable_field']) {
+                $fields[$fieldName] = $fieldMapping;
+            }
+        }
+
+        return $fields;
+    }
+
+    private function getFieldMapping(string $fieldName, ClassMetadata $classMetadata): array
+    {
+        $fieldMapping = $classMetadata->getFieldMapping($fieldName);
+
+        $isSmallIntegerField = 'smallint' === $fieldMapping['type'];
+        $isIntegerField = 'integer' === $fieldMapping['type'];
+        $isNumericField = \in_array($fieldMapping['type'], ['number', 'bigint', 'decimal', 'float']);
+        $isGuidField = \in_array($fieldMapping['type'], ['guid', 'uuid']);
+        $isTextField = \in_array($fieldMapping['type'], ['string', 'text', 'citext', 'array', 'simple_array']);
+        $isSearchableField = $isSmallIntegerField || $isIntegerField || $isNumericField || $isTextField || $isGuidField;
+
+        return [
+            'is_searchable_field' => $isSearchableField,
+            'is_small_integer_field' => $isSmallIntegerField,
+            'is_integer_field' => $isIntegerField,
+            'is_numeric_field' => $isNumericField,
+            'is_guid_field' => $isGuidField,
+            'is_text_field' => $isTextField,
+        ];
     }
 }

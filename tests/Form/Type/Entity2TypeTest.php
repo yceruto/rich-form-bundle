@@ -472,6 +472,7 @@ class Entity2TypeTest extends TypeTestCase
             'search_fields' => ['name'],
             'result_fields' => null,
             'class' => self::SINGLE_IDENT_CLASS,
+            'text' => 'name',
             'qb_parts' => [
                 'dql_parts' => array_filter($queryBuilder->getDQLParts()),
                 'parameters' => [],

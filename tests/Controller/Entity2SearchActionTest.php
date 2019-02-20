@@ -7,6 +7,8 @@ use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Tools\SchemaTool;
 use PHPUnit\Framework\TestCase;
 use Symfony\Bridge\Doctrine\Test\DoctrineTestHelper;
+use Symfony\Bridge\Doctrine\Tests\Fixtures\GroupableEntity;
+use Symfony\Bridge\Doctrine\Tests\Fixtures\SingleIntIdEntity;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Session\Attribute\AttributeBag;
@@ -51,9 +53,13 @@ class Entity2SearchActionTest extends TestCase
         $this->em = DoctrineTestHelper::createTestEntityManager();
         $this->registry = $this->createRegistryMock('default', $this->em);
         $this->session = new Session(new MockArraySessionStorage(), new AttributeBag(), new FlashBag());
-        $this->session->set(Entity2Type::SESSION_ID.'123', [
+        $this->session->set(Entity2Type::SESSION_ID.'hash', [
             'em' => 'default',
+            'max_results' => 10,
+            'search_fields' => null,
+            'result_fields' => null,
             'class' => self::SINGLE_IDENT_CLASS,
+            'text' => null,
         ]);
 
         $this->controller = new Entity2SearchAction($this->registry, new PropertyAccessor());
@@ -87,14 +93,35 @@ class Entity2SearchActionTest extends TestCase
         $this->controller = null;
     }
 
-    public function testEmptyResponseIfEmptySearchQuery(): void
+    protected function createRegistryMock($name, $em)
+    {
+        $registry = $this->getMockBuilder(ManagerRegistry::class)->getMock();
+        $registry->method('getManager')
+            ->with($this->equalTo($name))
+            ->willReturn($em);
+
+        return $registry;
+    }
+
+    protected function persist(array $entities): void
+    {
+        foreach ($entities as $entity) {
+            $this->em->persist($entity);
+        }
+
+        $this->em->flush();
+        // no clear, because entities managed by the choice field must
+        // be managed!
+    }
+
+    public function testEmptyResultsIfEmptySearchQuery(): void
     {
         $request = Request::create('/rich-form/entity2/search?query=');
 
-        $response = $this->controller->__invoke($request, '123');
+        $response = $this->controller->__invoke($request, 'hash');
 
         $this->assertInstanceOf(JsonResponse::class, $response);
-        $this->assertSame('[]', $response->getContent());
+        $this->assertSame('{"results":[],"has_next_page":false}', $response->getContent());
     }
 
     /**
@@ -117,7 +144,7 @@ class Entity2SearchActionTest extends TestCase
         $request = Request::create('/rich-form/entity2/search?query=foo');
         $this->session = null;
 
-        $this->controller->__invoke($request, '123');
+        $this->controller->__invoke($request, 'hash');
     }
 
     /**
@@ -130,16 +157,93 @@ class Entity2SearchActionTest extends TestCase
         $this->session->clear();
         $request->setSession($this->session);
 
-        $this->controller->__invoke($request, '123');
+        $this->controller->__invoke($request, 'hash');
     }
 
-    private function createRegistryMock($name, $em)
+    public function testEmptyResultsIfEmptyDatabase(): void
     {
-        $registry = $this->getMockBuilder(ManagerRegistry::class)->getMock();
-        $registry->method('getManager')
-            ->with($this->equalTo($name))
-            ->willReturn($em);
+        $request = Request::create('/rich-form/entity2/search?query=foo');
+        $request->setSession($this->session);
 
-        return $registry;
+        $response = $this->controller->__invoke($request, 'hash');
+        $this->assertInstanceOf(JsonResponse::class, $response);
+        $this->assertSame('{"results":[],"has_next_page":false}', $response->getContent());
+    }
+
+    public function testMatchedSearchQuery(): void
+    {
+        $entity1 = new SingleIntIdEntity(1, 'Foo');
+        $entity2 = new SingleIntIdEntity(2, 'Bar');
+
+        $this->persist([$entity1, $entity2]);
+
+        $request = Request::create('/rich-form/entity2/search?query=foo');
+        $request->setSession($this->session);
+
+        $response = $this->controller->__invoke($request, 'hash');
+        $this->assertInstanceOf(JsonResponse::class, $response);
+        $this->assertSame('{"results":[{"id":1,"text":"Foo"}],"has_next_page":false}', $response->getContent());
+    }
+
+    public function testUnmatchedSearchQuery(): void
+    {
+        $entity1 = new SingleIntIdEntity(1, 'Foo');
+        $entity2 = new SingleIntIdEntity(2, 'Bar');
+
+        $this->persist([$entity1, $entity2]);
+
+        $request = Request::create('/rich-form/entity2/search?query=baz');
+        $request->setSession($this->session);
+
+        $response = $this->controller->__invoke($request, 'hash');
+        $this->assertInstanceOf(JsonResponse::class, $response);
+        $this->assertSame('{"results":[],"has_next_page":false}', $response->getContent());
+    }
+
+    public function testSearchByCustomFieldNameOption(): void
+    {
+        $entity1 = new SingleIntIdEntity(1, '789');
+        $entity2 = new SingleIntIdEntity(2, 'Foo');
+        $entity2->phoneNumbers = ['123456789'];
+
+        $this->persist([$entity1, $entity2]);
+
+        $request = Request::create('/rich-form/entity2/search?query=789');
+        $request->setSession($this->session);
+        $this->session->set(Entity2Type::SESSION_ID.'hash', [
+            'em' => 'default',
+            'max_results' => 10,
+            'search_fields' => 'phoneNumbers',
+            'result_fields' => null,
+            'class' => self::SINGLE_IDENT_CLASS,
+            'text' => null,
+        ]);
+
+        $response = $this->controller->__invoke($request, 'hash');
+        $this->assertInstanceOf(JsonResponse::class, $response);
+        $this->assertSame('{"results":[{"id":2,"text":"Foo"}],"has_next_page":false}', $response->getContent());
+    }
+
+    public function testCustomFieldsResults(): void
+    {
+        $entity1 = new GroupableEntity(1, 'Foo', 'F');
+        $entity2 = new GroupableEntity(2, 'Bar', 'B');
+
+        $this->persist([$entity1, $entity2]);
+
+        $request = Request::create('/rich-form/entity2/search?query=foo');
+        $request->setSession($this->session);
+        $this->session->set(Entity2Type::SESSION_ID.'hash', [
+            'em' => 'default',
+            'max_results' => 10,
+            'search_fields' => null,
+            'result_fields' => 'groupName',
+            'class' => self::ITEM_GROUP_CLASS,
+            'text' => 'name',
+        ]);
+
+        $response = $this->controller->__invoke($request, 'hash');
+        $this->assertInstanceOf(JsonResponse::class, $response);
+        $this->assertSame('{"results":[{"id":1,"text":"Foo","groupName":"F"}],"has_next_page":false}', $response->getContent());
     }
 }
