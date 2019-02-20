@@ -21,6 +21,7 @@
         "symfony/options-resolver": "^4.2"
     },
     "require-dev": {
+        "symfony/panther": "^0.2.0",
         "symfony/phpunit-bridge": "~3.4|~4.0",
         "symfony/var-dumper": "~3.4|~4.0"
     },
