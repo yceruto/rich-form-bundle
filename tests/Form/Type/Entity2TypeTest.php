@@ -499,7 +499,7 @@ class Entity2TypeTest extends TypeTestCase
         $this->assertSame(['0', '2'], $form->getViewData());
     }
 
-    public function testSerializedContextForAutocompleteOption(): void
+    public function testSerializedAutocompleteOptions(): void
     {
         $entity1 = new SingleIntIdEntity(1, 'Foo');
         $entity2 = new SingleIntIdEntity(2, 'Bar');
@@ -523,20 +523,21 @@ class Entity2TypeTest extends TypeTestCase
             ],
         ])->createView();
 
-        $context = [
+        $options = [
             'em' => 'default',
             'max_results' => 15,
             'search_fields' => ['name'],
+            'result_fields' => null,
             'class' => self::SINGLE_IDENT_CLASS,
             'qb_parts' => [
                 'dql_parts' => array_filter($queryBuilder->getDQLParts()),
                 'parameters' => [],
             ],
         ];
-        $queryHash = CachingFactoryDecorator::generateHash($context, 'entity2_query');
+        $queryHash = CachingFactoryDecorator::generateHash($options, 'entity2_query');
 
         $this->assertSame($queryHash, $view->vars['entity2']['query_hash']);
         $this->assertTrue($this->session->has($type::SESSION_ID.$queryHash));
-        $this->assertSame($context, $this->session->get($type::SESSION_ID.$queryHash));
+        $this->assertSame($options, $this->session->get($type::SESSION_ID.$queryHash));
     }
 }

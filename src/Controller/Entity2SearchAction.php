@@ -22,31 +22,31 @@ class Entity2SearchAction
     public function __invoke(Request $request, string $hash = null)
     {
         try {
-            $context = $this->getContext($request, $hash);
-            $em = $this->getEntityManager($context);
+            $options = $this->getOptions($request, $hash);
+            $em = $this->getEntityManager($options);
         } catch (\RuntimeException $e) {
             return new JsonResponse([['id' => 0, 'text' => 'Error!']]);
         }
 
-        $qb = $this->createQueryBuilder($em, $context);
+        $qb = $this->createQueryBuilder($em, $options);
 
         $searchQuery = $request->query->get('query');
-        if (null === $context['search_fields']) {
+        if (null === $options['search_fields']) {
             // ... search by all fields (use Doctrine metadata)
         } else {
             // ... search by configured fields (use Doctrine metadata)
         }
 
         $page = $request->query->get('page') ?: 1;
-        $results = $this->createResults($page, $qb, $context);
+        $results = $this->createResults($page, $qb, $options);
 
         return new JsonResponse([
             'results' => $results,
-            'has_next_page' => \count($results) === $context['max_results'],
+            'has_next_page' => \count($results) === $options['max_results'],
         ]);
     }
 
-    private function getContext(Request $request, string $hash): array
+    private function getOptions(Request $request, string $hash): array
     {
         if (null === $hash) {
             throw new \RuntimeException('Missing hash value.');
@@ -58,53 +58,53 @@ class Entity2SearchAction
             throw new \RuntimeException('Missing session.');
         }
 
-        $context = $session->get(Entity2Type::SESSION_ID.$hash);
+        $options = $session->get(Entity2Type::SESSION_ID.$hash);
 
-        if (!\is_array($context)) {
-            throw new \RuntimeException('Invalid context.');
+        if (!\is_array($options)) {
+            throw new \RuntimeException('Invalid options.');
         }
 
-        return $context;
+        return $options;
     }
 
-    private function getEntityManager(array $context): EntityManagerInterface
+    private function getEntityManager(array $options): EntityManagerInterface
     {
-        if (null !== $context['em']) {
-            return $this->registry->getManager($context['em']);
+        if (null !== $options['em']) {
+            return $this->registry->getManager($options['em']);
         }
 
-        $em = $this->registry->getManagerForClass($context['class']);
+        $em = $this->registry->getManagerForClass($options['class']);
 
         if (null === $em) {
-            throw new \RuntimeException(sprintf('Class "%s" seems not to be a managed Doctrine entity. Did you forget to map it?', $context['class']));
+            throw new \RuntimeException(sprintf('Class "%s" seems not to be a managed Doctrine entity. Did you forget to map it?', $options['class']));
         }
 
         return $em;
     }
 
-    private function createQueryBuilder(EntityManagerInterface $em, array $context): QueryBuilder
+    private function createQueryBuilder(EntityManagerInterface $em, array $options): QueryBuilder
     {
         $qb = $em->createQueryBuilder();
 
-        if (isset($context['qb_parts'])) {
-            foreach ($context['qb_parts']['dql_parts'] as $name => $part) {
+        if (isset($options['qb_parts'])) {
+            foreach ($options['qb_parts']['dql_parts'] as $name => $part) {
                 $qb->add($name, $part);
             }
 
-            foreach ($context['qb_parts']['parameters'] as $parameter) {
+            foreach ($options['qb_parts']['parameters'] as $parameter) {
                 $qb->setParameter($parameter['name'], $parameter['value'], $parameter['type']);
             }
         } else {
-            $qb->select('entity')->from($context['class'], 'entity');
+            $qb->select('entity')->from($options['class'], 'entity');
         }
 
         return $qb;
     }
 
-    private function createResults(int $page, QueryBuilder $qb, array $context): array
+    private function createResults(int $page, QueryBuilder $qb, array $options): array
     {
-        $qb->setFirstResult($page * $context['max_results'] - $context['max_results']);
-        $qb->setMaxResults($context['max_results']);
+        $qb->setFirstResult($page * $options['max_results'] - $options['max_results']);
+        $qb->setMaxResults($options['max_results']);
 
         $paginator = new Paginator($qb, [] !== $qb->getDQLPart('join'));
         $paginator->setUseOutputWalkers(false);

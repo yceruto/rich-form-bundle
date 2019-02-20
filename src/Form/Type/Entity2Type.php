@@ -51,16 +51,16 @@ class Entity2Type extends AbstractType
         $queryHash = null;
 
         if (null !== $this->session) {
-            $context = $options['autocomplete'] + [
+            $autocompleteOptions = $options['autocomplete'] + [
                 'class' => $options['class'],
             ];
 
             if ($options['query_builder']) {
-                $context['qb_parts'] = $this->getQueryBuilderPartsForSerialize($options['query_builder']);
+                $autocompleteOptions['qb_parts'] = $this->getQueryBuilderPartsForSerialize($options['query_builder']);
             }
 
-            $queryHash = CachingFactoryDecorator::generateHash($context, 'entity2_query');
-            $this->session->set(self::SESSION_ID.$queryHash, $context);
+            $queryHash = CachingFactoryDecorator::generateHash($autocompleteOptions, 'entity2_query');
+            $this->session->set(self::SESSION_ID.$queryHash, $autocompleteOptions);
         }
 
         $view->vars['entity2']['query_hash'] = $queryHash;
@@ -90,11 +90,13 @@ class Entity2Type extends AbstractType
                     'em' => null,
                     'max_results' => 10,
                     'search_fields' => null,
+                    'result_fields' => null,
                 ]);
 
                 $resolver->setAllowedTypes('em', ['null', 'string']);
                 $resolver->setAllowedTypes('max_results', ['null', 'int']);
                 $resolver->setAllowedTypes('search_fields', ['null', 'string', 'string[]']);
+                $resolver->setAllowedTypes('result_fields', ['null', 'string', 'string[]']);
             },
         ]);
 
