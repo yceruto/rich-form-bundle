@@ -224,7 +224,7 @@ class Entity2SearchActionTest extends TestCase
         $this->assertSame('{"results":[{"id":2,"text":"Foo"}],"has_next_page":false}', $response->getContent());
     }
 
-    public function testCustomFieldsResults(): void
+    public function testCustomResultFields(): void
     {
         $entity1 = new GroupableEntity(1, 'Foo', 'F');
         $entity2 = new GroupableEntity(2, 'Bar', 'B');
@@ -245,5 +245,81 @@ class Entity2SearchActionTest extends TestCase
         $response = $this->controller->__invoke($request, 'hash');
         $this->assertInstanceOf(JsonResponse::class, $response);
         $this->assertSame('{"results":[{"id":1,"text":"Foo","groupName":"F"}],"has_next_page":false}', $response->getContent());
+    }
+
+    public function testCustomQueryBuilder(): void
+    {
+        $entity1 = new GroupableEntity(1, 'Foo1', 'A');
+        $entity2 = new GroupableEntity(2, 'Foo2', 'B');
+
+        $this->persist([$entity1, $entity2]);
+
+        $queryBuilder = $this->em->createQueryBuilder()
+            ->select('e')
+            ->from(self::ITEM_GROUP_CLASS, 'e')
+            ->where('e.groupName = :group_name')
+            ->setParameter('group_name', 'B')
+        ;
+
+        $request = Request::create('/rich-form/entity2/search?query=foo');
+        $request->setSession($this->session);
+        $this->session->set(Entity2Type::SESSION_ID.'hash', [
+            'em' => 'default',
+            'max_results' => 10,
+            'search_fields' => null,
+            'result_fields' => null,
+            'class' => self::ITEM_GROUP_CLASS,
+            'text' => 'name',
+            'qb_parts' => [
+                'dql_parts' => array_filter($queryBuilder->getDQLParts()),
+                'parameters' => [['name' => 'group_name', 'value' => 'B', 'type' => null]],
+            ],
+        ]);
+
+        $response = $this->controller->__invoke($request, 'hash');
+        $this->assertInstanceOf(JsonResponse::class, $response);
+        $this->assertSame('{"results":[{"id":2,"text":"Foo2"}],"has_next_page":false}', $response->getContent());
+    }
+
+    public function testPagination(): void
+    {
+        $entity1 = new SingleIntIdEntity(1, 'Foo');
+        $entity2 = new SingleIntIdEntity(2, 'Foobar');
+
+        $this->persist([$entity1, $entity2]);
+
+        $options = [
+            'em' => 'default',
+            'max_results' => 1,
+            'search_fields' => null,
+            'result_fields' => null,
+            'class' => self::SINGLE_IDENT_CLASS,
+            'text' => null,
+        ];
+
+        $request = Request::create('/rich-form/entity2/search?query=foo&page=1');
+        $request->setSession($this->session);
+        $this->session->set(Entity2Type::SESSION_ID.'hash', $options);
+
+        $response = $this->controller->__invoke($request, 'hash');
+
+        $this->assertInstanceOf(JsonResponse::class, $response);
+        $this->assertSame('{"results":[{"id":1,"text":"Foo"}],"has_next_page":true}', $response->getContent());
+
+        $request = Request::create('/rich-form/entity2/search?query=foo&page=2');
+        $request->setSession($this->session);
+        $this->session->set(Entity2Type::SESSION_ID.'hash', $options);
+
+        $response = $this->controller->__invoke($request, 'hash');
+
+        $this->assertSame('{"results":[{"id":2,"text":"Foobar"}],"has_next_page":true}', $response->getContent());
+
+        $request = Request::create('/rich-form/entity2/search?query=foo&page=3');
+        $request->setSession($this->session);
+        $this->session->set(Entity2Type::SESSION_ID.'hash', $options);
+
+        $response = $this->controller->__invoke($request, 'hash');
+
+        $this->assertSame('{"results":[],"has_next_page":false}', $response->getContent());
     }
 }

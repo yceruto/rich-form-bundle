@@ -37,10 +37,15 @@ class Entity2SearchAction
         $qb = $this->createSearchQueryBuilder($searchQuery, $em, $options);
         $results = $this->createResults($request->query->get('page', 1), $qb, $options);
 
+        $count = \count($results);
+
         return new JsonResponse([
             'results' => $results,
-            // @FIXME
-            'has_next_page' => \count($results) === $options['max_results'],
+            // For better performance we don't calculate the total records
+            // through a database query, instead we do an extra HTTP request
+            // (only if the total records is multiple of max_results)
+            // then empty results and has_next_page will be "false"
+            'has_next_page' => $count > 0 && $count === $options['max_results'],
         ]);
     }
 
@@ -96,6 +101,7 @@ class Entity2SearchAction
 
         $rootAlias = current($qb->getRootAliases());
 
+        $orX = $qb->expr()->orX();
         foreach ($fields as $fieldName => $fieldMapping) {
             // this complex condition is needed to avoid issues on PostgreSQL databases
             if (
@@ -103,19 +109,23 @@ class Entity2SearchAction
                 ($fieldMapping['is_integer_field'] && $isSearchQueryInteger) ||
                 ($fieldMapping['is_numeric_field'] && $isSearchQueryNumeric)
             ) {
-                $qb->orWhere(\sprintf('%s.%s = :numeric_query', $rootAlias, $fieldName));
+                $orX->add(\sprintf('%s.%s = :numeric_query', $rootAlias, $fieldName));
                 // adding '0' turns the string into a numeric value
                 $qb->setParameter('numeric_query', 0 + $searchQuery);
             } elseif ($isSearchQueryUuid && $fieldMapping['is_guid_field']) {
-                $qb->orWhere(\sprintf('%s.%s = :uuid_query', $rootAlias, $fieldName));
+                $orX->add(\sprintf('%s.%s = :uuid_query', $rootAlias, $fieldName));
                 $qb->setParameter('uuid_query', $searchQuery);
             } elseif ($fieldMapping['is_text_field']) {
-                $qb->orWhere(\sprintf('LOWER(%s.%s) LIKE :fuzzy_query', $rootAlias, $fieldName));
+                $orX->add(\sprintf('LOWER(%s.%s) LIKE :fuzzy_query', $rootAlias, $fieldName));
                 $qb->setParameter('fuzzy_query', '%'.$lowerSearchQuery.'%');
 
-                $qb->orWhere(\sprintf('LOWER(%s.%s) IN (:words_query)', $rootAlias, $fieldName));
+                $orX->add(\sprintf('LOWER(%s.%s) IN (:words_query)', $rootAlias, $fieldName));
                 $qb->setParameter('words_query', \explode(' ', $lowerSearchQuery));
             }
+        }
+
+        if ($orX->count() > 0) {
+            $qb->andWhere($orX);
         }
 
         return $qb;
