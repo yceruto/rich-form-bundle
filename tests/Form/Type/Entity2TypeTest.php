@@ -499,23 +499,6 @@ class Entity2TypeTest extends TypeTestCase
         $this->assertSame(['0', '2'], $form->getViewData());
     }
 
-    /**
-     * @expectedException \LogicException
-     */
-    public function testLogicExceptionWhenUseDQLAndQueryBuilderOptions(): void
-    {
-        $this->factory->createNamed('name', static::TESTED_TYPE, null, [
-            'em' => 'default',
-            'class' => self::SINGLE_IDENT_CLASS,
-            'query_builder' => function (EntityRepository $r) use (&$queryBuilder) {
-                return $queryBuilder = $r->createQueryBuilder('entity')->where('entity.phoneNumbers is not null');
-            },
-            'autocomplete' => [
-                'dql_where' => 'entity.phoneNumbers is not null',
-            ],
-        ]);
-    }
-
     public function testSerializedContextForAutocompleteOption(): void
     {
         $entity1 = new SingleIntIdEntity(1, 'Foo');
@@ -544,11 +527,6 @@ class Entity2TypeTest extends TypeTestCase
             'em' => 'default',
             'max_results' => 15,
             'search_fields' => ['name'],
-            'dql_select' => null,
-            'dql_from_alias' => null,
-            'dql_join' => null,
-            'dql_where' => null,
-            'dql_order_by' => null,
             'class' => self::SINGLE_IDENT_CLASS,
             'qb_parts' => [
                 'dql_parts' => array_filter($queryBuilder->getDQLParts()),

@@ -3,6 +3,7 @@
 namespace Yceruto\Bundle\RichFormBundle\Form\Type;
 
 use Doctrine\ORM\QueryBuilder;
+use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\ChoiceList\Factory\CachingFactoryDecorator;
 use Symfony\Component\Form\ChoiceList\LazyChoiceList;
@@ -17,7 +18,6 @@ use Symfony\Component\OptionsResolver\Exception\InvalidArgumentException;
 use Symfony\Component\OptionsResolver\Options;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Yceruto\Bundle\RichFormBundle\Form\ChoiceList\Loader\Entity2LoaderDecorator;
-use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 
 class Entity2Type extends AbstractType
 {
@@ -84,41 +84,19 @@ class Entity2Type extends AbstractType
             return new Entity2LoaderDecorator($loader);
         };
 
-        $resolver->setDefault('autocomplete', function (OptionsResolver $resolver, Options $parent) {
-            $dqlPartNormalizer = function (Options $options, $dqlPart) use ($parent) {
-                if (null !== $dqlPart && null !== $parent['query_builder']) {
-                    throw new \LogicException('DQL options cannot be used in combination with query_builder option, use one or the other but not both.');
-                }
+        $resolver->setDefaults([
+            'autocomplete' => function (OptionsResolver $resolver) {
+                $resolver->setDefaults([
+                    'em' => null,
+                    'max_results' => 10,
+                    'search_fields' => null,
+                ]);
 
-                return $dqlPart;
-            };
-
-            $resolver->setDefaults([
-                'em' => null,
-                'max_results' => 10,
-                'search_fields' => null,
-                'dql_select' => null,
-                'dql_from_alias' => null,
-                'dql_join' => null,
-                'dql_where' => null,
-                'dql_order_by' => null,
-            ]);
-
-            $resolver->setAllowedTypes('em', ['null', 'string']);
-            $resolver->setAllowedTypes('max_results', ['null', 'int']);
-            $resolver->setAllowedTypes('search_fields', ['null', 'string', 'string[]']);
-            $resolver->setAllowedTypes('dql_select', ['null', 'string', 'string[]']);
-            $resolver->setAllowedTypes('dql_from_alias', ['null', 'string']);
-            $resolver->setAllowedTypes('dql_join', ['null', 'string', 'string[]']);
-            $resolver->setAllowedTypes('dql_where', ['null', 'string', 'string[]']);
-            $resolver->setAllowedTypes('dql_order_by', ['null', 'string', 'string[]']);
-
-            $resolver->setNormalizer('dql_select', $dqlPartNormalizer);
-            $resolver->setNormalizer('dql_from_alias', $dqlPartNormalizer);
-            $resolver->setNormalizer('dql_join', $dqlPartNormalizer);
-            $resolver->setNormalizer('dql_where', $dqlPartNormalizer);
-            $resolver->setNormalizer('dql_order_by', $dqlPartNormalizer);
-        });
+                $resolver->setAllowedTypes('em', ['null', 'string']);
+                $resolver->setAllowedTypes('max_results', ['null', 'int']);
+                $resolver->setAllowedTypes('search_fields', ['null', 'string', 'string[]']);
+            },
+        ]);
 
         $resolver->setNormalizer('expanded', $extendedNormalizer);
         $resolver->setNormalizer('choice_loader', $choiceLoaderNormalizer);
