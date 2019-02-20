@@ -9,7 +9,6 @@ use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\Tools\SchemaTool;
 use Symfony\Bridge\Doctrine\Form\DoctrineOrmExtension;
 use Symfony\Bridge\Doctrine\Test\DoctrineTestHelper;
-use Symfony\Bridge\Doctrine\Tests\Fixtures\CompositeIntIdEntity;
 use Symfony\Bridge\Doctrine\Tests\Fixtures\SingleAssociationToIntIdEntity;
 use Symfony\Bridge\Doctrine\Tests\Fixtures\SingleIntIdEntity;
 use Symfony\Bridge\Doctrine\Tests\Fixtures\SingleIntIdNoToStringEntity;
@@ -20,7 +19,6 @@ use Symfony\Component\HttpFoundation\Session\Attribute\AttributeBag;
 use Symfony\Component\HttpFoundation\Session\Flash\FlashBag;
 use Symfony\Component\HttpFoundation\Session\Session;
 use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
-use Symfony\Component\HttpFoundation\Session\Storage\SessionStorageInterface;
 use Yceruto\Bundle\RichFormBundle\Form\Type\Entity2Type;
 
 class Entity2TypeTest extends TypeTestCase
@@ -47,11 +45,6 @@ class Entity2TypeTest extends TypeTestCase
     private $emRegistry;
 
     /**
-     * @var SessionStorageInterface
-     */
-    private $storage;
-
-    /**
      * @var Session
      */
     private $session;
@@ -60,8 +53,7 @@ class Entity2TypeTest extends TypeTestCase
     {
         $this->em = DoctrineTestHelper::createTestEntityManager();
         $this->emRegistry = $this->createRegistryMock('default', $this->em);
-        $this->storage = new MockArraySessionStorage();
-        $this->session = new Session($this->storage, new AttributeBag(), new FlashBag());
+        $this->session = new Session(new MockArraySessionStorage(), new AttributeBag(), new FlashBag());
 
         parent::setUp();
 
@@ -94,7 +86,6 @@ class Entity2TypeTest extends TypeTestCase
 
         $this->em = null;
         $this->emRegistry = null;
-        $this->storage = null;
         $this->session = null;
     }
 
@@ -440,63 +431,15 @@ class Entity2TypeTest extends TypeTestCase
         $this->assertSame(['1', '3'], $form->getViewData());
     }
 
-    public function testSubmitMultipleNonExpandedCompositeIdentifier(): void
+    /**
+     * @expectedException \RuntimeException
+     */
+    public function testCompositeIdentifierIsNotSupported(): void
     {
-        $entity1 = new CompositeIntIdEntity(10, 20, 'Foo');
-        $entity2 = new CompositeIntIdEntity(30, 40, 'Bar');
-        $entity3 = new CompositeIntIdEntity(50, 60, 'Baz');
-
-        $this->persist([$entity1, $entity2, $entity3]);
-
-        $form = $this->factory->createNamed('name', static::TESTED_TYPE, null, [
+        $this->factory->createNamed('name', static::TESTED_TYPE, null, [
             'em' => 'default',
             'class' => self::COMPOSITE_IDENT_CLASS,
-            'multiple' => true,
-            'choice_label' => 'name',
         ]);
-
-        $this->assertCount(0, $form->createView()->vars['choices']);
-
-        // because of the composite key collection keys are used
-        $form->submit(['0', '2']);
-
-        $expected = new ArrayCollection([$entity1, $entity3]);
-
-        $this->assertTrue($form->isSynchronized());
-        $this->assertEquals($expected, $form->getData());
-        $this->assertSame(['0', '2'], $form->getViewData());
-    }
-
-    public function testSubmitMultipleNonExpandedCompositeIdentifierExistingData(): void
-    {
-        $entity1 = new CompositeIntIdEntity(10, 20, 'Foo');
-        $entity2 = new CompositeIntIdEntity(30, 40, 'Bar');
-        $entity3 = new CompositeIntIdEntity(50, 60, 'Baz');
-
-        $this->persist([$entity1, $entity2, $entity3]);
-
-        $form = $this->factory->createNamed('name', static::TESTED_TYPE, null, [
-            'em' => 'default',
-            'class' => self::COMPOSITE_IDENT_CLASS,
-            'multiple' => true,
-            'choice_label' => 'name',
-        ]);
-
-        $existing = new ArrayCollection([0 => $entity2]);
-        $form->setData($existing);
-
-        $this->assertCount(1, $form->createView()->vars['choices']);
-
-        $form->submit(['0', '2']);
-
-        // entry with index 0 ($entity2) was replaced
-        $expected = new ArrayCollection([0 => $entity1, 1 => $entity3]);
-
-        $this->assertTrue($form->isSynchronized());
-        $this->assertEquals($expected, $form->getData());
-        // same object still, useful if it is a PersistentCollection
-        $this->assertSame($existing, $form->getData());
-        $this->assertSame(['0', '2'], $form->getViewData());
     }
 
     public function testSerializedAutocompleteOptions(): void

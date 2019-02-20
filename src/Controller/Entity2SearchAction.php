@@ -4,64 +4,61 @@ namespace Yceruto\Bundle\RichFormBundle\Controller;
 
 use Doctrine\Common\Persistence\ManagerRegistry;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\ORM\Tools\Pagination\Paginator;
+use Symfony\Bridge\Doctrine\Form\ChoiceList\IdReader;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 use Yceruto\Bundle\RichFormBundle\Form\Type\Entity2Type;
 
 class Entity2SearchAction
 {
     private $registry;
+    private $propertyAccessor;
 
-    public function __construct(ManagerRegistry $registry)
+    public function __construct(ManagerRegistry $registry, PropertyAccessorInterface $propertyAccessor)
     {
         $this->registry = $registry;
+        $this->propertyAccessor = $propertyAccessor;
     }
 
     public function __invoke(Request $request, string $hash = null)
     {
-        try {
-            $options = $this->getOptions($request, $hash);
-            $em = $this->getEntityManager($options);
-        } catch (\RuntimeException $e) {
-            return new JsonResponse([['id' => 0, 'text' => 'Error!']]);
-        }
-
-        $qb = $this->createQueryBuilder($em, $options);
-
         $searchQuery = $request->query->get('query');
-        if (null === $options['search_fields']) {
-            // ... search by all fields (use Doctrine metadata)
-        } else {
-            // ... search by configured fields (use Doctrine metadata)
+
+        if (null === $searchQuery || '' === $searchQuery) {
+            return new JsonResponse([]);
         }
 
-        $page = $request->query->get('page') ?: 1;
-        $results = $this->createResults($page, $qb, $options);
+        $options = $this->getOptions($request, $hash);
+        $em = $this->getEntityManager($options);
+        $qb = $this->createSearchQueryBuilder($searchQuery, $em, $options);
+        $results = $this->createResults($request->query->get('page', 1), $qb, $options);
 
         return new JsonResponse([
             'results' => $results,
+            // @FIXME
             'has_next_page' => \count($results) === $options['max_results'],
         ]);
     }
 
-    private function getOptions(Request $request, string $hash): array
+    private function getOptions(Request $request, ?string $hash): array
     {
         if (null === $hash) {
             throw new \RuntimeException('Missing hash value.');
         }
 
-        $session = $request->getSession();
-
-        if (null === $session) {
+        if (!$request->hasSession()) {
             throw new \RuntimeException('Missing session.');
         }
 
+        $session = $request->getSession();
         $options = $session->get(Entity2Type::SESSION_ID.$hash);
 
         if (!\is_array($options)) {
-            throw new \RuntimeException('Invalid options.');
+            throw new \RuntimeException('Missing options.');
         }
 
         return $options;
@@ -80,6 +77,28 @@ class Entity2SearchAction
         }
 
         return $em;
+    }
+
+    private function createSearchQueryBuilder(string $searchQuery, EntityManagerInterface $em, array $options): QueryBuilder
+    {
+        $qb = $this->createQueryBuilder($em, $options);
+
+        $isSearchQueryNumeric = \is_numeric($searchQuery);
+        $isSearchQuerySmallInteger = \ctype_digit($searchQuery) && $searchQuery >= -32768 && $searchQuery <= 32767;
+        $isSearchQueryInteger = \ctype_digit($searchQuery) && $searchQuery >= -2147483648 && $searchQuery <= 2147483647;
+        $isSearchQueryUuid = 1 === \preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i', $searchQuery);
+        $lowerSearchQuery = \mb_strtolower($searchQuery);
+
+        /* @var ClassMetadata $classMetadata */
+        $classMetadata = $em->getClassMetadata($options['class']);
+
+        if (null === $options['search_fields']) {
+            // ... search by all fields (use Doctrine metadata)
+        } else {
+            // ... search by configured fields (use Doctrine metadata)
+        }
+
+        return $qb;
     }
 
     private function createQueryBuilder(EntityManagerInterface $em, array $options): QueryBuilder
@@ -103,6 +122,9 @@ class Entity2SearchAction
 
     private function createResults(int $page, QueryBuilder $qb, array $options): array
     {
+        $classMetadata = $qb->getEntityManager()->getClassMetadata($options['class']);
+        $idReader = new IdReader($options['em'], $classMetadata);
+
         $qb->setFirstResult($page * $options['max_results'] - $options['max_results']);
         $qb->setMaxResults($options['max_results']);
 
@@ -111,12 +133,18 @@ class Entity2SearchAction
 
         $results = [];
         foreach ($paginator as $entity) {
-            $results[] = [
-                'id' => $entity->getId(),
+            $data = [
+                'id' => $idReader->getIdValue($entity),
                 'text' => (string) $entity,
             ];
 
-            // add custom fields for custom result template
+            if (null === $options['result_fields']) {
+                foreach ((array) $options['result_fields'] as $field) {
+                    $data[$field] = $this->propertyAccessor->getValue($entity, $field);
+                }
+            }
+
+            $results[] = $data;
         }
 
         return $results;

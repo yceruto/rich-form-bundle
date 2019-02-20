@@ -1,0 +1,145 @@
+<?php
+
+namespace Yceruto\Bundle\RichFormBundle\Tests\Controller;
+
+use Doctrine\Common\Persistence\ManagerRegistry;
+use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\Tools\SchemaTool;
+use PHPUnit\Framework\TestCase;
+use Symfony\Bridge\Doctrine\Test\DoctrineTestHelper;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Session\Attribute\AttributeBag;
+use Symfony\Component\HttpFoundation\Session\Flash\FlashBag;
+use Symfony\Component\HttpFoundation\Session\Session;
+use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
+use Symfony\Component\PropertyAccess\PropertyAccessor;
+use Yceruto\Bundle\RichFormBundle\Controller\Entity2SearchAction;
+use Yceruto\Bundle\RichFormBundle\Form\Type\Entity2Type;
+
+class Entity2SearchActionTest extends TestCase
+{
+    public const ITEM_GROUP_CLASS = 'Symfony\Bridge\Doctrine\Tests\Fixtures\GroupableEntity';
+    public const SINGLE_IDENT_CLASS = 'Symfony\Bridge\Doctrine\Tests\Fixtures\SingleIntIdEntity';
+    public const SINGLE_IDENT_NO_TO_STRING_CLASS = 'Symfony\Bridge\Doctrine\Tests\Fixtures\SingleIntIdNoToStringEntity';
+    public const SINGLE_STRING_IDENT_CLASS = 'Symfony\Bridge\Doctrine\Tests\Fixtures\SingleStringIdEntity';
+    public const SINGLE_ASSOC_IDENT_CLASS = 'Symfony\Bridge\Doctrine\Tests\Fixtures\SingleAssociationToIntIdEntity';
+    public const SINGLE_STRING_CASTABLE_IDENT_CLASS = 'Symfony\Bridge\Doctrine\Tests\Fixtures\SingleStringCastableIdEntity';
+
+    /**
+     * @var EntityManager
+     */
+    private $em;
+
+    /**
+     * @var \PHPUnit_Framework_MockObject_MockObject|ManagerRegistry
+     */
+    private $registry;
+
+    /**
+     * @var Session
+     */
+    private $session;
+
+    /**
+     * @var Entity2SearchAction
+     */
+    private $controller;
+
+    protected function setUp()
+    {
+        $this->em = DoctrineTestHelper::createTestEntityManager();
+        $this->registry = $this->createRegistryMock('default', $this->em);
+        $this->session = new Session(new MockArraySessionStorage(), new AttributeBag(), new FlashBag());
+        $this->session->set(Entity2Type::SESSION_ID.'123', [
+            'em' => 'default',
+            'class' => self::SINGLE_IDENT_CLASS,
+        ]);
+
+        $this->controller = new Entity2SearchAction($this->registry, new PropertyAccessor());
+
+        $schemaTool = new SchemaTool($this->em);
+        $classes = [
+            $this->em->getClassMetadata(self::ITEM_GROUP_CLASS),
+            $this->em->getClassMetadata(self::SINGLE_IDENT_CLASS),
+            $this->em->getClassMetadata(self::SINGLE_IDENT_NO_TO_STRING_CLASS),
+            $this->em->getClassMetadata(self::SINGLE_STRING_IDENT_CLASS),
+            $this->em->getClassMetadata(self::SINGLE_ASSOC_IDENT_CLASS),
+            $this->em->getClassMetadata(self::SINGLE_STRING_CASTABLE_IDENT_CLASS),
+        ];
+
+        try {
+            $schemaTool->dropSchema($classes);
+        } catch (\Exception $e) {
+        }
+
+        try {
+            $schemaTool->createSchema($classes);
+        } catch (\Exception $e) {
+        }
+    }
+
+    protected function tearDown()
+    {
+        $this->em = null;
+        $this->registry = null;
+        $this->session = null;
+        $this->controller = null;
+    }
+
+    public function testEmptyResponseIfEmptySearchQuery(): void
+    {
+        $request = Request::create('/rich-form/entity2/search?query=');
+
+        $response = $this->controller->__invoke($request, '123');
+
+        $this->assertInstanceOf(JsonResponse::class, $response);
+        $this->assertSame('[]', $response->getContent());
+    }
+
+    /**
+     * @expectedException \RuntimeException
+     * @expectedExceptionMessage Missing hash value.
+     */
+    public function testMissingHash(): void
+    {
+        $request = Request::create('/rich-form/entity2/search?query=foo');
+
+        $this->controller->__invoke($request);
+    }
+
+    /**
+     * @expectedException \RuntimeException
+     * @expectedExceptionMessage Missing session.
+     */
+    public function testMissingSession(): void
+    {
+        $request = Request::create('/rich-form/entity2/search?query=foo');
+        $this->session = null;
+
+        $this->controller->__invoke($request, '123');
+    }
+
+    /**
+     * @expectedException \RuntimeException
+     * @expectedExceptionMessage Missing options.
+     */
+    public function testMissingOptions(): void
+    {
+        $request = Request::create('/rich-form/entity2/search?query=foo');
+        $this->session->clear();
+        $request->setSession($this->session);
+
+        $this->controller->__invoke($request, '123');
+    }
+
+    private function createRegistryMock($name, $em)
+    {
+        $registry = $this->getMockBuilder(ManagerRegistry::class)->getMock();
+        $registry->method('getManager')
+            ->with($this->equalTo($name))
+            ->willReturn($em);
+
+        return $registry;
+    }
+}

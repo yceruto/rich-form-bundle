@@ -81,6 +81,10 @@ class Entity2Type extends AbstractType
                 return null;
             }
 
+            if (!$options['id_reader']->isSingleId()) {
+                throw new \RuntimeException('Composite identifier is not supported.');
+            }
+
             return new Entity2LoaderDecorator($loader);
         };
 

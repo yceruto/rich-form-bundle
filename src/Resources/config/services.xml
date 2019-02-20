@@ -6,6 +6,7 @@
     <services>
         <service id="richform.controller.entity2search_action" class="Yceruto\Bundle\RichFormBundle\Controller\Entity2SearchAction">
             <argument type="service" id="doctrine" />
+            <argument type="service" id="property_accessor" />
         </service>
     </services>
 </container>
