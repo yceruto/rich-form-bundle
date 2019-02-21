@@ -7,6 +7,7 @@ use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Tools\SchemaTool;
 use PHPUnit\Framework\TestCase;
 use Symfony\Bridge\Doctrine\Test\DoctrineTestHelper;
+use Symfony\Bridge\Doctrine\Tests\Fixtures\AssociationEntity;
 use Symfony\Bridge\Doctrine\Tests\Fixtures\GroupableEntity;
 use Symfony\Bridge\Doctrine\Tests\Fixtures\SingleIntIdEntity;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -27,6 +28,7 @@ class Entity2SearchActionTest extends TestCase
     public const SINGLE_STRING_IDENT_CLASS = 'Symfony\Bridge\Doctrine\Tests\Fixtures\SingleStringIdEntity';
     public const SINGLE_ASSOC_IDENT_CLASS = 'Symfony\Bridge\Doctrine\Tests\Fixtures\SingleAssociationToIntIdEntity';
     public const SINGLE_STRING_CASTABLE_IDENT_CLASS = 'Symfony\Bridge\Doctrine\Tests\Fixtures\SingleStringCastableIdEntity';
+    public const ASSOCIATION_ENTITY = 'Symfony\Bridge\Doctrine\Tests\Fixtures\AssociationEntity';
 
     /**
      * @var EntityManager
@@ -72,6 +74,7 @@ class Entity2SearchActionTest extends TestCase
             $this->em->getClassMetadata(self::SINGLE_STRING_IDENT_CLASS),
             $this->em->getClassMetadata(self::SINGLE_ASSOC_IDENT_CLASS),
             $this->em->getClassMetadata(self::SINGLE_STRING_CASTABLE_IDENT_CLASS),
+            $this->em->getClassMetadata(self::ASSOCIATION_ENTITY),
         ];
 
         try {
@@ -200,7 +203,7 @@ class Entity2SearchActionTest extends TestCase
         $this->assertSame('{"results":[],"has_next_page":false}', $response->getContent());
     }
 
-    public function testSearchByCustomFieldNameOption(): void
+    public function testCustomSearchFields(): void
     {
         $entity1 = new SingleIntIdEntity(1, '789');
         $entity2 = new SingleIntIdEntity(2, 'Foo');
@@ -222,6 +225,56 @@ class Entity2SearchActionTest extends TestCase
         $response = $this->controller->__invoke($request, 'hash');
         $this->assertInstanceOf(JsonResponse::class, $response);
         $this->assertSame('{"results":[{"id":2,"text":"Foo"}],"has_next_page":false}', $response->getContent());
+    }
+
+    public function testCustomSearchFieldsWithAssociationEntity(): void
+    {
+        $entity1 = new AssociationEntity();
+        $entity1->single = new SingleIntIdEntity(1, 'Foo');
+        $entity2 = new AssociationEntity();
+        $entity2->single = new SingleIntIdEntity(2, 'Bar');
+
+        $this->persist([$entity1->single, $entity1, $entity2->single, $entity2]);
+
+        $request = Request::create('/rich-form/entity2/search?query=bar');
+        $request->setSession($this->session);
+        $this->session->set(Entity2Type::SESSION_ID.'hash', [
+            'em' => 'default',
+            'max_results' => 10,
+            'search_fields' => 'single',
+            'result_fields' => null,
+            'class' => self::ASSOCIATION_ENTITY,
+            'text' => 'single.name',
+        ]);
+
+        $response = $this->controller->__invoke($request, 'hash');
+        $this->assertInstanceOf(JsonResponse::class, $response);
+        $this->assertSame('{"results":[{"id":2,"text":"Bar"}],"has_next_page":false}', $response->getContent());
+    }
+
+    public function testCustomSearchFieldsWithAssociationEntityField(): void
+    {
+        $entity1 = new AssociationEntity();
+        $entity1->single = new SingleIntIdEntity(1, 'Foo');
+        $entity2 = new AssociationEntity();
+        $entity2->single = new SingleIntIdEntity(2, 'Bar');
+
+        $this->persist([$entity1->single, $entity1, $entity2->single, $entity2]);
+
+        $request = Request::create('/rich-form/entity2/search?query=bar');
+        $request->setSession($this->session);
+        $this->session->set(Entity2Type::SESSION_ID.'hash', [
+            'em' => 'default',
+            'max_results' => 10,
+            'search_fields' => 'single.name',
+            'result_fields' => null,
+            'class' => self::ASSOCIATION_ENTITY,
+            'text' => 'single.name',
+        ]);
+
+        $response = $this->controller->__invoke($request, 'hash');
+        $this->assertInstanceOf(JsonResponse::class, $response);
+        $this->assertSame('{"results":[{"id":2,"text":"Bar"}],"has_next_page":false}', $response->getContent());
     }
 
     public function testCustomResultFields(): void
