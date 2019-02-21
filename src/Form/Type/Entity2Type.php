@@ -26,7 +26,7 @@ class Entity2Type extends AbstractType
 
     private $session;
 
-    public function __construct(Session $session = null)
+    public function __construct(Session $session)
     {
         $this->session = $session;
     }
@@ -49,28 +49,24 @@ class Entity2Type extends AbstractType
 
     public function buildView(FormView $view, FormInterface $form, array $options): void
     {
-        $queryHash = null;
+        $autocompleteOptions = $options['autocomplete'] + [
+            'class' => $options['class'],
+        ];
 
-        if (null !== $this->session) {
-            $autocompleteOptions = $options['autocomplete'] + [
-                'class' => $options['class'],
-            ];
-
-            if (\is_string($options['choice_label'])) {
-                $autocompleteOptions['text'] = $options['choice_label'];
-            } elseif ($options['choice_label'] instanceof PropertyPath) {
-                $autocompleteOptions['text'] = (string) $options['choice_label'];
-            } else {
-                $autocompleteOptions['text'] = null;
-            }
-
-            if ($options['query_builder']) {
-                $autocompleteOptions['qb_parts'] = $this->getQueryBuilderPartsForSerialize($options['query_builder']);
-            }
-
-            $queryHash = CachingFactoryDecorator::generateHash($autocompleteOptions, 'entity2_query');
-            $this->session->set(self::SESSION_ID.$queryHash, $autocompleteOptions);
+        if (\is_string($options['choice_label'])) {
+            $autocompleteOptions['text'] = $options['choice_label'];
+        } elseif ($options['choice_label'] instanceof PropertyPath) {
+            $autocompleteOptions['text'] = (string) $options['choice_label'];
+        } else {
+            $autocompleteOptions['text'] = null;
         }
+
+        if ($options['query_builder']) {
+            $autocompleteOptions['qb_parts'] = $this->getQueryBuilderPartsForSerialize($options['query_builder']);
+        }
+
+        $queryHash = CachingFactoryDecorator::generateHash($autocompleteOptions, 'entity2_query');
+        $this->session->set(self::SESSION_ID.$queryHash, $autocompleteOptions);
 
         $view->vars['entity2']['query_hash'] = $queryHash;
     }

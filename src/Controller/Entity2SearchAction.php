@@ -35,8 +35,8 @@ class Entity2SearchAction
         $options = $this->getOptions($request, $hash);
         $em = $this->getEntityManager($options);
         $qb = $this->createSearchQueryBuilder($searchQuery, $em, $options);
-        $results = $this->createResults($request->query->get('page', 1), $qb, $options);
 
+        $results = $this->createResults($request->query->get('page', 1), $qb, $options);
         $count = \count($results);
 
         return new JsonResponse([
