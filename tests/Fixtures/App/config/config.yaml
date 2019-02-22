@@ -1,0 +1,39 @@
+# Basic config common to all functional tests
+# Can be easily overridden in each test config
+
+imports:
+    - { resource: services.yaml }
+
+parameters:
+    database_path: '%kernel.root_dir%/../../../build/test.db'
+
+framework:
+    secret: secret
+    default_locale: en
+    test: ~
+    router:
+        resource: '%kernel.root_dir%/config/routes.yaml'
+    form: true
+    session:
+        storage_id: session.storage.mock_file
+
+doctrine:
+    dbal:
+        driver: pdo_sqlite
+        path: '%database_path%'
+    orm:
+        auto_generate_proxy_classes: true
+        auto_mapping: true
+        mappings:
+            App\Test:
+                is_bundle: false
+                type: annotation
+                dir: '%kernel.root_dir%/src/Entity/'
+                prefix: 'App\Test\Entity'
+                alias: 'App\Test'
+
+twig:
+    strict_variables: true
+    default_path: '%kernel.root_dir%/templates'
+    form_themes:
+        - '@RichForm/form/fields.html.twig'

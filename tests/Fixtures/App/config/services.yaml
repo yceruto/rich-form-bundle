@@ -1,0 +1,12 @@
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    App\Test\:
+        resource: '../src/*'
+        exclude: '../src/{Entity}'
+
+    App\Test\Controller\:
+        resource: '../src/Controller'
+        tags: ['controller.service_arguments']

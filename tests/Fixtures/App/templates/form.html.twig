@@ -1,0 +1,17 @@
+{% extends 'base.html.twig' %}
+
+{% block stylesheets %}
+    <link rel="stylesheet" href="{{ asset('bundles/richform/richform.css') }}">
+{% endblock %}
+
+{% block body %}
+    <h1>New Product</h1>
+    {{ form_start(form) }}
+        {{ form_widget(form) }}
+        <button type="submit">Submit</button>
+    {{ form_end(form) }}
+{% endblock %}
+
+{% block javascripts %}
+    <script src="{{ asset('bundles/richform/richform.js') }}"></script>
+{% endblock %}

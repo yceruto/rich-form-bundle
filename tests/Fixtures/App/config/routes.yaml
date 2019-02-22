@@ -1,0 +1,7 @@
+richform:
+    resource: '@RichFormBundle/Resources/config/routing/entity2.xml'
+
+controllers:
+    resource: ../src/Controller/
+    type: annotation
+
