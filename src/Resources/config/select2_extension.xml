@@ -4,7 +4,7 @@
            xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
 
     <services>
-        <service id="richform.form.type_extension" class="Yceruto\Bundle\RichFormBundle\Form\Extension\Select2TypeExtension">
+        <service id="richform.select2.type_extension" class="Yceruto\Bundle\RichFormBundle\Form\Extension\Select2TypeExtension">
             <tag name="form.type_extension" extended-type="Yceruto\Bundle\RichFormBundle\Form\Type\Entity2Type" />
         </service>
     </services>
