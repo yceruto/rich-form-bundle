@@ -1,7 +1,7 @@
 {
     "name": "yceruto/rich-form-bundle",
     "type": "symfony-bundle",
-    "description": "Generous form features for Symfony web applications",
+    "description": "Form features for Symfony applications",
     "keywords": ["form"],
     "homepage": "https://github.com/yceruto/RichFormBundle",
     "license": "MIT",
@@ -21,9 +21,13 @@
         "symfony/options-resolver": "^4.2"
     },
     "require-dev": {
+        "doctrine/doctrine-fixtures-bundle": "^3.0",
+        "symfony/asset": "~3.4|~4.0",
         "symfony/panther": "^0.2.0",
         "symfony/phpunit-bridge": "~3.4|~4.0",
-        "symfony/var-dumper": "~3.4|~4.0"
+        "symfony/twig-bundle":"~3.4|~4.0",
+        "symfony/var-dumper": "~3.4|~4.0",
+        "symfony/yaml": "~3.4|~4.0"
     },
     "config": {
         "sort-packages": true
@@ -34,7 +38,11 @@
         }
     },
     "autoload-dev": {
+        "classmap": [
+            "tests/Fixtures/App/AppKernel.php"
+        ],
         "psr-4": {
+            "App\\Test\\": "tests/Fixtures/App/src/",
             "Yceruto\\Bundle\\RichFormBundle\\Tests\\": "tests/"
         }
     },
