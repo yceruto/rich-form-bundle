@@ -19,6 +19,7 @@ use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
 use Symfony\Component\PropertyAccess\PropertyAccessor;
 use Yceruto\Bundle\RichFormBundle\Controller\Entity2SearchAction;
 use Yceruto\Bundle\RichFormBundle\Form\Type\Entity2Type;
+use Yceruto\Bundle\RichFormBundle\Tests\Fixtures\Entity\EmbeddedEntity;
 
 class Entity2SearchActionTest extends TestCase
 {
@@ -29,6 +30,7 @@ class Entity2SearchActionTest extends TestCase
     public const SINGLE_ASSOC_IDENT_CLASS = 'Symfony\Bridge\Doctrine\Tests\Fixtures\SingleAssociationToIntIdEntity';
     public const SINGLE_STRING_CASTABLE_IDENT_CLASS = 'Symfony\Bridge\Doctrine\Tests\Fixtures\SingleStringCastableIdEntity';
     public const ASSOCIATION_ENTITY = 'Symfony\Bridge\Doctrine\Tests\Fixtures\AssociationEntity';
+    public const EMBEDDED_ENTITY = 'Yceruto\Bundle\RichFormBundle\Tests\Fixtures\Entity\EmbeddedEntity';
 
     /**
      * @var EntityManager
@@ -75,6 +77,7 @@ class Entity2SearchActionTest extends TestCase
             $this->em->getClassMetadata(self::SINGLE_ASSOC_IDENT_CLASS),
             $this->em->getClassMetadata(self::SINGLE_STRING_CASTABLE_IDENT_CLASS),
             $this->em->getClassMetadata(self::ASSOCIATION_ENTITY),
+            $this->em->getClassMetadata(self::EMBEDDED_ENTITY),
         ];
 
         try {
@@ -270,6 +273,31 @@ class Entity2SearchActionTest extends TestCase
             'result_fields' => null,
             'class' => self::ASSOCIATION_ENTITY,
             'text' => 'single.name',
+        ]);
+
+        $response = $this->controller->__invoke($request, 'hash');
+        $this->assertInstanceOf(JsonResponse::class, $response);
+        $this->assertSame('{"results":[{"id":2,"text":"Bar"}],"has_next_page":false}', $response->getContent());
+    }
+
+    public function testCustomSearchFieldsWithEmbeddedEntityField(): void
+    {
+        $entity1 = new EmbeddedEntity(1, 'Foo');
+        $entity1->contact->phone = '1234567890';
+        $entity2 = new EmbeddedEntity(2, 'Bar');
+        $entity2->contact->phone = '0987654321';
+
+        $this->persist([$entity1, $entity2]);
+
+        $request = Request::create('/rich-form/entity2/search?query=321');
+        $request->setSession($this->session);
+        $this->session->set(Entity2Type::SESSION_ID.'hash', [
+            'em' => 'default',
+            'max_results' => 10,
+            'search_fields' => 'contact.phone',
+            'result_fields' => null,
+            'class' => self::EMBEDDED_ENTITY,
+            'text' => 'name',
         ]);
 
         $response = $this->controller->__invoke($request, 'hash');
