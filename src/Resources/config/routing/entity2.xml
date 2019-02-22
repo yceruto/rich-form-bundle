@@ -5,6 +5,6 @@
         xsi:schemaLocation="http://symfony.com/schema/routing http://symfony.com/schema/routing/routing-1.0.xsd">
 
     <route id="rich_form_entity2_search" path="/rich-form/entity2/{hash}/search">
-        <default key="_controller">Yceruto\Bundle\RichFormBundle\Controller\Entity2SearchAction</default>
+        <default key="_controller">richform.controller.entity2search_action</default>
     </route>
 </routes>
