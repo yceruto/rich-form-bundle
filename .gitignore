@@ -4,6 +4,7 @@ phpunit.xml
 /.phpunit
 /vendor/*
 /build/
+/tests/Fixtures/App/public/bundles/
 
 /node_modules/
 npm-debug.log
