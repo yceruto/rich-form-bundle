@@ -4,7 +4,7 @@
            xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
 
     <services>
-        <service id="richform.controller.entity2search_action" class="Yceruto\Bundle\RichFormBundle\Controller\Entity2SearchAction">
+        <service id="richform.controller.entity2search_action" class="Yceruto\Bundle\RichFormBundle\Controller\Entity2SearchAction" public="true">
             <argument type="service" id="doctrine" />
             <argument type="service" id="property_accessor" />
         </service>
