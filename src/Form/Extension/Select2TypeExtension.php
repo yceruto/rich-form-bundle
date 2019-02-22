@@ -26,7 +26,7 @@ class Select2TypeExtension extends AbstractTypeExtension
         $resolver->setDefaults([
             'select2_options' => function (OptionsResolver $resolver) {
                 $resolver->setDefaults([
-                    'theme' => 'bootstrap',
+                    'theme' => 'default',
                     'allow_clear' => true,
                     'minimum_input_length' => 1,
                     'result_template' => null,
@@ -47,6 +47,6 @@ class Select2TypeExtension extends AbstractTypeExtension
 
     public static function getExtendedTypes(): iterable
     {
-        yield Entity2Type::class;
+        return [Entity2Type::class];
     }
 }
