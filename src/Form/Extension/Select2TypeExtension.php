@@ -45,6 +45,9 @@ class Select2TypeExtension extends AbstractTypeExtension
         ]);
     }
 
+    /**
+     * Symfony 3.4 Compatibility
+     */
     public function getExtendedType(): string
     {
         foreach (static::getExtendedTypes() as $extendedType) {
