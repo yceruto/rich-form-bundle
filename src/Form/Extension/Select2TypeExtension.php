@@ -32,8 +32,12 @@ class Select2TypeExtension extends AbstractTypeExtension
                     'result_template' => null,
                     'selection_template' => null,
                     'ajax' => function (OptionsResolver $resolver) {
-                        $resolver->setDefaults(['delay' => 250]);
+                        $resolver->setDefaults([
+                            'delay' => 250,
+                            'cache' => true,
+                        ]);
                         $resolver->setAllowedTypes('delay', 'int');
+                        $resolver->setAllowedTypes('cache', 'bool');
                     },
                 ]);
                 $resolver->setAllowedTypes('theme', ['null', 'string']);
