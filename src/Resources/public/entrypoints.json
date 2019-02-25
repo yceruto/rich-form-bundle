@@ -1,0 +1,9 @@
+{
+  "entrypoints": {
+    "richform": {
+      "js": [
+        "/richform.js"
+      ]
+    }
+  }
+}
