@@ -8,6 +8,7 @@
         <tr>
             <th>Name</th>
             <th>Category</th>
+            <th>Tags</th>
             <th>Actions</th>
         </tr>
         </thead>
@@ -16,6 +17,7 @@
             <tr>
                 <td>{{ product.name }}</td>
                 <td>{{ product.category }}</td>
+                <td>{{ product.tags|join(', ') }}</td>
                 <td>
                     <a href="{{ path('app_edit', {'id': product.id}) }}">Edit</a>
                 </td>

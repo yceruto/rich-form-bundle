@@ -2,6 +2,7 @@
 
 namespace App\Test\Entity;
 
+use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
@@ -26,9 +27,21 @@ class Product
     /**
      * @var Category
      *
-     * @ORM\ManyToOne(targetEntity="Category", cascade={"persist"})
+     * @ORM\ManyToOne(targetEntity="Category")
      */
     public $category;
+
+    /**
+     * @var Tag[]
+     *
+     * @ORM\ManyToMany(targetEntity="Tag")
+     */
+    public $tags;
+
+    public function __construct()
+    {
+        $this->tags = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {

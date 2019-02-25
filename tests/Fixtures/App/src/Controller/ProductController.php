@@ -2,13 +2,12 @@
 
 namespace App\Test\Controller;
 
-use App\Test\Entity\Category;
 use App\Test\Entity\Product;
+use App\Test\Form\ProductFormType;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
-use Yceruto\Bundle\RichFormBundle\Form\Type\Entity2Type;
 
 class ProductController extends AbstractController
 {
@@ -29,12 +28,7 @@ class ProductController extends AbstractController
     {
         $product = new Product();
 
-        $form = $this->createFormBuilder($product)
-            ->add('name')
-            ->add('category', Entity2Type::class, [
-                'class' => Category::class,
-            ])
-            ->getForm()
+        $form = $this->createForm(ProductFormType::class, $product)
             ->handleRequest($request)
         ;
 
@@ -56,12 +50,7 @@ class ProductController extends AbstractController
     {
         $product = $this->getDoctrine()->getRepository(Product::class)->find($id);
 
-        $form = $this->createFormBuilder($product)
-            ->add('name')
-            ->add('category', Entity2Type::class, [
-                'class' => Category::class,
-            ])
-            ->getForm()
+        $form = $this->createForm(ProductFormType::class, $product)
             ->handleRequest($request)
         ;
 
