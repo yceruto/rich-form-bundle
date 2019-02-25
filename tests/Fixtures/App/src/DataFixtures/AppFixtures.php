@@ -14,6 +14,8 @@ class AppFixtures extends Fixture
         for ($i = 1; $i <= 50; ++$i) {
             $category = new Category();
             $category->name = 'Category '.$i;
+            $category->description = 'Short description...';
+            $category->enabled = 13 !== $i;
             $manager->persist($category);
 
             $tag = new Tag();

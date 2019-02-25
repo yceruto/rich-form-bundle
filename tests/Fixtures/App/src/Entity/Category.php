@@ -23,6 +23,20 @@ class Category
      */
     public $name;
 
+    /**
+     * @var string
+     *
+     * @ORM\Column(type="string")
+     */
+    public $description;
+
+    /**
+     * @var bool
+     *
+     * @ORM\Column(type="boolean")
+     */
+    public $enabled = true;
+
     public function getId(): ?int
     {
         return $this->id;
