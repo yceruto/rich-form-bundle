@@ -29,6 +29,8 @@ $ php bin/console assets:install --symlink
 Configuration
 -------------
 
+**Assets**
+
 ```html
 <!doctype html>
 <html>
@@ -40,6 +42,18 @@ Configuration
         <script src="{{ asset('bundles/richform/richform.js') }}"></script>
     </head>
 ```
+
+**Basic Usage**
+
+```php
+$formBuilder->add('category', Entity2Type::class, [
+    'class' => Category::class,
+]);
+```
+
+The `Entity2Type` extends from the built-in `EntityType` by adding the most awesome Select2 features: 
+search via Ajax, pagination, custom result templates, etc, all of them combined with the `EntityType`
+options like `query_builder` and the new autocomplete options: `search_fields`, `result_fields` and `max_results`.
 
 License
 -------
