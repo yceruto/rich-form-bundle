@@ -45,6 +45,13 @@ class Select2TypeExtension extends AbstractTypeExtension
         ]);
     }
 
+    public function getExtendedType(): string
+    {
+        foreach (static::getExtendedTypes() as $extendedType) {
+            return $extendedType;
+        }
+    }
+
     public static function getExtendedTypes(): iterable
     {
         return [Entity2Type::class];
