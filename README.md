@@ -1,7 +1,7 @@
 RichForm
 ========
 
-RichForm provides autocomplete form types for optimal performance in your Symfony applications.
+RichForm provides autocomplete form types with optimal performance for your Symfony applications.
 
 [![Build Status](https://travis-ci.org/yceruto/rich-form-bundle.svg?branch=master)](https://travis-ci.org/yceruto/rich-form-bundle)
 
