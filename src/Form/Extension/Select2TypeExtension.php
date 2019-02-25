@@ -10,6 +10,13 @@ use Yceruto\Bundle\RichFormBundle\Form\Type\Entity2Type;
 
 class Select2TypeExtension extends AbstractTypeExtension
 {
+    private $globalOptions;
+
+    public function __construct(array $globalOptions = [])
+    {
+        $this->globalOptions = $globalOptions;
+    }
+
     public function buildView(FormView $view, FormInterface $form, array $options): void
     {
         $view->vars['select2']['options'] = $options['select2_options'];
@@ -26,15 +33,15 @@ class Select2TypeExtension extends AbstractTypeExtension
         $resolver->setDefaults([
             'select2_options' => function (OptionsResolver $resolver) {
                 $resolver->setDefaults([
-                    'theme' => 'default',
+                    'theme' => $this->globalOptions['theme'] ?? 'default',
                     'allow_clear' => true,
-                    'minimum_input_length' => 1,
+                    'minimum_input_length' => $this->globalOptions['minimum_input_length'] ?? 1,
                     'result_template' => null,
                     'selection_template' => null,
                     'ajax' => function (OptionsResolver $resolver) {
                         $resolver->setDefaults([
-                            'delay' => 250,
-                            'cache' => true,
+                            'delay' => $this->globalOptions['ajax_delay'] ?? 250,
+                            'cache' => $this->globalOptions['ajax_cache'] ?? true,
                         ]);
                         $resolver->setAllowedTypes('delay', 'int');
                         $resolver->setAllowedTypes('cache', 'bool');

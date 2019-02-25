@@ -25,10 +25,12 @@ class Entity2Type extends AbstractType
     public const SESSION_ID = 'richform.entity2.';
 
     private $session;
+    private $globalOptions;
 
-    public function __construct(Session $session)
+    public function __construct(Session $session, array $globalOptions = [])
     {
         $this->session = $session;
+        $this->globalOptions = $globalOptions;
     }
 
     public function buildForm(FormBuilderInterface $builder, array $options): void
@@ -97,7 +99,7 @@ class Entity2Type extends AbstractType
             'autocomplete' => function (OptionsResolver $resolver) {
                 $resolver->setDefaults([
                     'em' => null,
-                    'max_results' => 10,
+                    'max_results' => $this->globalOptions['max_results'] ?? 10,
                     'search_fields' => null,
                     'result_fields' => null,
                 ]);
