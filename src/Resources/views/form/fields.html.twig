@@ -1,6 +1,5 @@
 {% block entity2_select2_widget %}
     {{ form_widget(form, { attr: attr|merge({
-        'data-select2-widget': 'true',
         'data-select2-options': {
             'ajax': {
                 'url': path('rich_form_entity2_search', { hash: entity2.query_hash }),
@@ -17,4 +16,5 @@
             'templateSelection': select2.options.selection_template,
         }|json_encode|raw
     }) }) }}
+    <script>window.addEventListener('load', function() { $('#{{ id }}').entity2() })</script>
 {% endblock %}

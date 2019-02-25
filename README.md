@@ -29,6 +29,22 @@ $ php bin/console assets:install --symlink
 Configuration
 -------------
 
+**Controller**
+
+```yaml
+# config/routes/rich_form.yaml
+rich_form:
+    resource: '@RichFormBundle/Resources/config/routing/entity2.xml'
+```
+
+**Form Themes**
+```yaml
+# config/packages/twig.yaml
+twig:
+    form_themes:
+        - '@RichForm/form/fields.html.twig'
+```
+
 **Assets**
 
 ```html

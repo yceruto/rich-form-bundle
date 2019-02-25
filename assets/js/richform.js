@@ -1,21 +1,26 @@
-// Helpers
+(function ($) {
+    'use strict';
 
-// Render function for key/value replacement in string templates
-String.prototype.render = function (parameters) {
-    return this.replace(/({{ (\w+) }})/g, function (match, pattern, name) {
-        return undefined !== parameters[name] ? parameters[name] : '';
-    })
-};
+    // Render function for name/value replacement in string templates
+    String.prototype.render = function (parameters) {
+        return this.replace(/({{ (\w+) }})/g, function (match, pattern, name) {
+            return undefined !== parameters[name] ? parameters[name] : '';
+        })
+    };
 
-// Initialize module
-// ------------------------------
+    // ENTITY2 PUBLIC CLASS DEFINITION
+    // ===============================
 
-// When page is fully loaded
-window.addEventListener('load', function() {
-    //data-select2-options
-    $('select[data-select2-widget=true]').each(function () {
-        const options = $(this).data('select2-options') || {};
+    let Entity2 = function (element, options) {
+        this.$element = $(element);
+        this.options = $.extend({}, Entity2.DEFAULTS, this.$element.data(), options);
 
+        this.initSelect2(this.options.select2Options);
+    };
+
+    Entity2.DEFAULTS = {};
+
+    Entity2.prototype.initSelect2 = function (options) {
         options.ajax.data = function (params) {
             return { 'query': params.term, 'page': params.page };
         };
@@ -61,6 +66,25 @@ window.addEventListener('load', function() {
             delete options.templateSelection;
         }
 
-        $(this).select2(options);
-    });
-});
+        this.$element.removeAttr('data-select2-options');
+
+        this.$element.select2(options);
+    };
+
+    // ENTITY2 PLUGIN DEFINITION
+    // =========================
+
+    function Plugin(option) {
+        return this.each(function () {
+            let $this = $(this);
+            let instance = $this.data('entity2');
+            let options = typeof option === 'object' && option;
+
+            if (!instance) $this.data('entity2', (new Entity2(this, options)));
+        })
+    }
+
+    $.fn.entity2 = Plugin;
+    $.fn.entity2.Constructor = Entity2;
+
+})(window.jQuery);
