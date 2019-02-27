@@ -42,8 +42,13 @@ class Configuration implements ConfigurationInterface
                         ->end()
 
                         ->integerNode('minimum_input_length')
-                            ->defaultValue(1)
+                            ->defaultValue(0)
                             ->info('Minimum number of characters required to start a search.')
+                        ->end()
+
+                        ->integerNode('minimum_results_for_search')
+                            ->defaultValue(10)
+                            ->info('The minimum number of results required to display the search box.')
                         ->end()
 
                         ->integerNode('ajax_delay')

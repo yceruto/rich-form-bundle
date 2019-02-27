@@ -35,7 +35,8 @@ class Select2TypeExtension extends AbstractTypeExtension
                 $resolver->setDefaults([
                     'theme' => $this->globalOptions['theme'] ?? 'default',
                     'allow_clear' => true,
-                    'minimum_input_length' => $this->globalOptions['minimum_input_length'] ?? 1,
+                    'minimum_input_length' => $this->globalOptions['minimum_input_length'] ?? 0,
+                    'minimum_results_for_search' => $this->globalOptions['minimum_results_for_search'] ?? 10,
                     'result_template' => null,
                     'selection_template' => null,
                     'ajax' => function (OptionsResolver $resolver) {
@@ -50,6 +51,7 @@ class Select2TypeExtension extends AbstractTypeExtension
                 $resolver->setAllowedTypes('theme', ['null', 'string']);
                 $resolver->setAllowedTypes('allow_clear', 'bool');
                 $resolver->setAllowedTypes('minimum_input_length', 'int');
+                $resolver->setAllowedTypes('minimum_results_for_search', 'int');
                 $resolver->setAllowedTypes('result_template', ['null', 'string']);
                 $resolver->setAllowedTypes('selection_template', ['null', 'string']);
             },
