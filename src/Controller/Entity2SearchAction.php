@@ -26,17 +26,14 @@ class Entity2SearchAction
 
     public function __invoke(Request $request, string $hash = null)
     {
-        $searchQuery = $request->query->get('query');
-
-        if (null === $searchQuery || '' === $searchQuery) {
-            return new JsonResponse(['results' => [], 'has_next_page' => false]);
-        }
-
         $options = $this->getOptions($request, $hash);
         $em = $this->getEntityManager($options);
+
+        $searchQuery = $request->query->get('query', '');
         $qb = $this->createSearchQueryBuilder($searchQuery, $em, $options);
 
-        $results = $this->createResults($request->query->get('page', 1), $qb, $options);
+        $page = $request->query->get('page', 1);
+        $results = $this->createResults($page, $qb, $options);
         $count = \count($results);
 
         return new JsonResponse([
@@ -86,7 +83,11 @@ class Entity2SearchAction
 
     private function createSearchQueryBuilder(string $searchQuery, EntityManagerInterface $em, array $options): QueryBuilder
     {
-        $qb = $this->createQueryBuilder($em, $options);
+        $qb = clone $this->createQueryBuilder($em, $options);
+
+        if ('' === $searchQuery) {
+            return $qb;
+        }
 
         $isSearchQueryNumeric = \is_numeric($searchQuery);
         $isSearchQuerySmallInteger = \ctype_digit($searchQuery) && $searchQuery >= -32768 && $searchQuery <= 32767;
