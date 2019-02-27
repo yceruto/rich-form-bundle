@@ -19,12 +19,16 @@ class Entity2SearchActionFunctionalTest extends PantherTestCase
         // Fill product name
         $crawler->filter('#product_form_name')->sendKeys('Product1');
 
-        // Adding "Category 23"
+        // Show first page
         $crawler->filter('.select2-selection--single')->click();
+        $client->waitFor('.select2-results__option--highlighted');
+        $liHtml = '<li class="select2-results__option select2-results__option--highlighted" role="treeitem" aria-selected="false" data-select2-id="5"><strong>Category 1</strong><br><small>Short description...</small></li>';
+        $this->assertSame($liHtml, $crawler->filter('.select2-results__option--highlighted')->html());
+        // Adding "Category 23"
         $searchInput = $crawler->filter('.select2-container--open .select2-search__field');
         $searchInput->sendKeys('23');
-        $client->waitFor('.select2-results__option--highlighted');
-        $liHtml = '<li class="select2-results__option select2-results__option--highlighted" role="treeitem" aria-selected="false" data-select2-id="7"><strong>Category 23</strong><br><small>Short description...</small></li>';
+        usleep(500000);
+        $liHtml = '<li class="select2-results__option select2-results__option--highlighted" role="treeitem" aria-selected="false" data-select2-id="17"><strong>Category 23</strong><br><small>Short description...</small></li>';
         $this->assertSame($liHtml, $crawler->filter('.select2-results__option--highlighted')->html());
         $searchInput->sendKeys(WebDriverKeys::ENTER);
 
@@ -32,14 +36,14 @@ class Entity2SearchActionFunctionalTest extends PantherTestCase
         $crawler->filter('.select2-selection--multiple')->click();
         $searchInput = $crawler->filter('.select2-container--open .select2-search__field');
         $searchInput->sendKeys('11');
-        $client->waitFor('.select2-results__option--highlighted');
+        usleep(500000);
         $searchInput->sendKeys(WebDriverKeys::ENTER);
 
         // Adding "Tag 20"
         $crawler->filter('.select2-selection--multiple')->click();
         $searchInput = $crawler->filter('.select2-container--open .select2-search__field');
         $searchInput->sendKeys('20');
-        $client->waitFor('.select2-results__option--highlighted');
+        usleep(500000);
         $searchInput->sendKeys(WebDriverKeys::ENTER);
 
         // Submit and redirect
@@ -62,14 +66,14 @@ class Entity2SearchActionFunctionalTest extends PantherTestCase
         $crawler->filter('.select2-selection--single')->click();
         $searchInput = $crawler->filter('.select2-container--open .select2-search__field');
         $searchInput->sendKeys('11');
-        $client->waitFor('.select2-results__option--highlighted');
+        usleep(500000);
         $searchInput->sendKeys(WebDriverKeys::ENTER);
 
         // Adding "Tag 32"
         $crawler->filter('.select2-selection--multiple')->click();
         $searchInput = $crawler->filter('.select2-container--open .select2-search__field');
         $searchInput->sendKeys('32');
-        $client->waitFor('.select2-results__option--highlighted');
+        usleep(500000);
         $searchInput->sendKeys(WebDriverKeys::ENTER);
 
         // Removing "Tag 11"
@@ -92,9 +96,8 @@ class Entity2SearchActionFunctionalTest extends PantherTestCase
         $crawler = $client->request('GET', '/new');
 
         $crawler->filter('.select2-selection--single')->click();
-        $searchInput = $crawler->filter('.select2-container--open .select2-search__field');
-        $searchInput->sendKeys('a');
-        $client->waitFor('.select2-results__option--highlighted');
+
+        usleep(500000);
 
         $results = $crawler->filter('.select2-results__options > li');
         $this->assertSame(11, $results->count());
@@ -102,7 +105,7 @@ class Entity2SearchActionFunctionalTest extends PantherTestCase
 
         $client->executeScript('document.getElementById("select2-product_form_category-results").scrollBy(0, 1000)');
 
-        sleep(1);
+        usleep(500000);
 
         $results = $crawler->filter('.select2-results__options > li');
         $this->assertSame(21, $results->count());
@@ -110,7 +113,7 @@ class Entity2SearchActionFunctionalTest extends PantherTestCase
 
         $client->executeScript('document.getElementById("select2-product_form_category-results").scrollBy(0, 1000)');
 
-        sleep(1);
+        usleep(500000);
 
         $results = $crawler->filter('.select2-results__options > li');
         $this->assertSame(31, $results->count());
@@ -118,7 +121,7 @@ class Entity2SearchActionFunctionalTest extends PantherTestCase
 
         $client->executeScript('document.getElementById("select2-product_form_category-results").scrollBy(0, 1000)');
 
-        sleep(1);
+        usleep(500000);
 
         $results = $crawler->filter('.select2-results__options > li');
         $this->assertSame(41, $results->count());
@@ -126,7 +129,7 @@ class Entity2SearchActionFunctionalTest extends PantherTestCase
 
         $client->executeScript('document.getElementById("select2-product_form_category-results").scrollBy(0, 1000)');
 
-        sleep(1);
+        usleep(500000);
 
         $results = $crawler->filter('.select2-results__options > li');
         $this->assertSame(49, $results->count());

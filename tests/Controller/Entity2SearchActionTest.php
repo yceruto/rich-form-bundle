@@ -120,16 +120,6 @@ class Entity2SearchActionTest extends TestCase
         // be managed!
     }
 
-    public function testEmptyResultsIfEmptySearchQuery(): void
-    {
-        $request = Request::create('/rich-form/entity2/search?query=');
-
-        $response = $this->controller->__invoke($request, 'hash');
-
-        $this->assertInstanceOf(JsonResponse::class, $response);
-        $this->assertSame('{"results":[],"has_next_page":false}', $response->getContent());
-    }
-
     /**
      * @expectedException \RuntimeException
      * @expectedExceptionMessage Missing hash value.
@@ -174,6 +164,22 @@ class Entity2SearchActionTest extends TestCase
         $response = $this->controller->__invoke($request, 'hash');
         $this->assertInstanceOf(JsonResponse::class, $response);
         $this->assertSame('{"results":[],"has_next_page":false}', $response->getContent());
+    }
+
+    public function testFirst10ResultsIfEmptySearchQuery(): void
+    {
+        $entity1 = new SingleIntIdEntity(1, 'Foo');
+        $entity2 = new SingleIntIdEntity(2, 'Bar');
+
+        $this->persist([$entity1, $entity2]);
+
+        $request = Request::create('/rich-form/entity2/search');
+        $request->setSession($this->session);
+
+        $response = $this->controller->__invoke($request, 'hash');
+
+        $this->assertInstanceOf(JsonResponse::class, $response);
+        $this->assertSame('{"results":[{"id":1,"text":"Foo"},{"id":2,"text":"Bar"}],"has_next_page":false}', $response->getContent());
     }
 
     public function testMatchedSearchQuery(): void
