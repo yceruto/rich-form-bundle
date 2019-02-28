@@ -32,14 +32,16 @@ class Select2TypeExtension extends AbstractTypeExtension
     public function configureOptions(OptionsResolver $resolver): void
     {
         $resolver->setDefaults([
-            'select2' => function (OptionsResolver $resolver) {
+            'select2' => function (OptionsResolver $resolver, Options $parent) {
                 $defaultTemplate = function (Options $options) {
                     return $options['template'];
                 };
 
                 $resolver->setDefaults([
                     'theme' => $this->globalOptions['theme'] ?? 'default',
-                    'allow_clear' => true,
+                    'allow_clear' => $this->globalOptions['allow_clear'] ?? function (Options $options) use ($parent) {
+                        return !$parent['required'];
+                    },
                     'minimum_input_length' => $this->globalOptions['minimum_input_length'] ?? 0,
                     'minimum_results_for_search' => $this->globalOptions['minimum_results_for_search'] ?? 10,
                     'template' => null,

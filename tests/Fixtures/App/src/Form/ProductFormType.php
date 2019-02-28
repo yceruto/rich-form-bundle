@@ -31,6 +31,7 @@ class ProductFormType extends AbstractType
             ->add('tags', Entity2Type::class, [
                 'class' => Tag::class,
                 'multiple' => true,
+                'required' => false,
             ])
         ;
     }

@@ -41,6 +41,11 @@ class Configuration implements ConfigurationInterface
                             ->info('The Select2 theme.')
                         ->end()
 
+                        ->booleanNode('allow_clear')
+                            ->defaultNull()
+                            ->info('Provides support for clearable selections.')
+                        ->end()
+
                         ->integerNode('minimum_input_length')
                             ->defaultValue(0)
                             ->info('Minimum number of characters required to start a search.')
