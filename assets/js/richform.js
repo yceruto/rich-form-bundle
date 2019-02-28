@@ -58,7 +58,7 @@
                     return object.text ? templateSelection.render(object) : '';
                 };
             } else {
-                delete options.templateResult;
+                delete options.templateSelection;
             }
         } else {
             delete options.escapeMarkup;
