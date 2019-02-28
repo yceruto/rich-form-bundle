@@ -3,7 +3,7 @@
 
     // Render function for name/value replacement in string templates
     String.prototype.render = function (parameters) {
-        return this.replace(/({{ (\w+) }})/g, function (match, pattern, name) {
+        return this.replace(/({{ ([\w.]+) }})/g, function (match, pattern, name) {
             return undefined !== parameters[name] ? parameters[name] : '';
         })
     };
