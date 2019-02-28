@@ -66,6 +66,11 @@
             delete options.templateSelection;
         }
 
+        // https://select2.org/troubleshooting/common-problems
+        if (this.$element.closest('.modal').length > 0) {
+            options.dropdownParent = this.$element.closest('.modal');
+        }
+
         this.$element.removeAttr('data-select2-options');
 
         this.$element.select2(options);
