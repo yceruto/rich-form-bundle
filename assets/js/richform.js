@@ -1,13 +1,6 @@
 (function ($) {
     'use strict';
 
-    // Render function for name/value replacement in string templates
-    String.prototype.render = function (parameters) {
-        return this.replace(/({{ ([\w.]+) }})/g, function (match, pattern, name) {
-            return undefined !== parameters[name] ? parameters[name] : '';
-        })
-    };
-
     // ENTITY2 PUBLIC CLASS DEFINITION
     // ===============================
 
@@ -21,6 +14,8 @@
     Entity2.DEFAULTS = {};
 
     Entity2.prototype.initSelect2 = function (options) {
+        const self = this;
+
         options.ajax.data = function (params) {
             return { 'query': params.term, 'page': params.page };
         };
@@ -54,7 +49,7 @@
                     parameters['id'] = object.id;
                     parameters['text'] = object.text;
 
-                    return templateResult.render(parameters);
+                    return self.render(templateResult, parameters);
                 };
             } else {
                 delete options.templateResult;
@@ -71,7 +66,7 @@
                     parameters['id'] = object.id;
                     parameters['text'] = object.text;
 
-                    return templateSelection.render(parameters);
+                    return self.render(templateSelection, parameters);
                 };
             } else {
                 delete options.templateSelection;
@@ -90,6 +85,12 @@
         this.$element.removeAttr('data-select2-options');
 
         this.$element.select2(options);
+    };
+
+    Entity2.prototype.render = function (template, parameters) {
+        return template.replace(/({{ ([\w.]+) }})/g, function (match, pattern, name) {
+            return undefined !== parameters[name] ? parameters[name] : '';
+        })
     };
 
     // ENTITY2 PLUGIN DEFINITION
