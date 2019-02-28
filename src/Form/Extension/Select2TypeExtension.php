@@ -43,7 +43,7 @@ class Select2TypeExtension extends AbstractTypeExtension
                         return !$parent['required'];
                     },
                     'minimum_input_length' => $this->globalOptions['minimum_input_length'] ?? 0,
-                    'minimum_results_for_search' => $this->globalOptions['minimum_results_for_search'] ?? 10,
+                    'minimum_results_for_search' => $this->globalOptions['minimum_results_for_search'] ?? $parent['max_results'] ?? 10,
                     'template' => null,
                     'result_template' => $defaultTemplate,
                     'selection_template' => $defaultTemplate,
