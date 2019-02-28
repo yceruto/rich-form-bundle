@@ -27,7 +27,6 @@ class ProductFormType extends AbstractType
                     'result_template' => '<strong>{{ text }}</strong><br><small>{{ description }}</small>',
                     'selection_template' => '<strong>{{ text }}</strong> <small>{{ description }}</small>',
                 ],
-                'placeholder' => '( Select a Category )',
             ])
             ->add('tags', Entity2Type::class, [
                 'class' => Tag::class,
