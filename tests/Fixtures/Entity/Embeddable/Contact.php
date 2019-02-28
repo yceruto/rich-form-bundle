@@ -13,4 +13,9 @@ class Contact
      * @ORM\Column(type="string", nullable=true)
      */
     public $phone;
+
+    public function __toString()
+    {
+        return $this->phone;
+    }
 }

@@ -311,6 +311,31 @@ class Entity2SearchActionTest extends TestCase
         $this->assertSame('{"results":[{"id":2,"text":"Bar"}],"has_next_page":false}', $response->getContent());
     }
 
+    public function testResultFieldsWithEmbeddedEntityField(): void
+    {
+        $entity1 = new EmbeddedEntity(1, 'Foo');
+        $entity1->contact->phone = '1234567890';
+        $entity2 = new EmbeddedEntity(2, 'Bar');
+        $entity2->contact->phone = '0987654321';
+
+        $this->persist([$entity1, $entity2]);
+
+        $request = Request::create('/rich-form/entity2/search?query=321');
+        $request->setSession($this->session);
+        $this->session->set(Entity2Type::SESSION_ID.'hash', [
+            'em' => 'default',
+            'max_results' => 10,
+            'search_fields' => 'contact.phone',
+            'result_fields' => 'contact', // using string cast
+            'class' => self::EMBEDDED_ENTITY,
+            'text' => 'name',
+        ]);
+
+        $response = $this->controller->__invoke($request, 'hash');
+        $this->assertInstanceOf(JsonResponse::class, $response);
+        $this->assertSame('{"results":[{"id":2,"text":"Bar","contact":"0987654321"}],"has_next_page":false}', $response->getContent());
+    }
+
     public function testCustomResultFields(): void
     {
         $entity1 = new GroupableEntity(1, 'Foo', 'F');

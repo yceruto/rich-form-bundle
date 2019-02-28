@@ -169,7 +169,13 @@ class Entity2SearchAction
 
             if (null !== $options['result_fields']) {
                 foreach ((array) $options['result_fields'] as $field) {
-                    $data[$field] = $this->propertyAccessor->getValue($entity, $field);
+                    $value = $this->propertyAccessor->getValue($entity, $field);
+
+                    if (\is_object($value)) {
+                        $value = (string) $value;
+                    }
+
+                    $data[$field] = $value;
                 }
             }
 
