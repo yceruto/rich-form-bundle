@@ -51,8 +51,12 @@ class Entity2Type extends AbstractType
 
     public function buildView(FormView $view, FormInterface $form, array $options): void
     {
-        $autocompleteOptions = $options['autocomplete'] + [
+        $autocompleteOptions = [
             'class' => $options['class'],
+            'em' => $options['entity_manager'],
+            'max_results' => $options['max_results'],
+            'search_fields' => $options['search_fields'],
+            'result_fields' => $options['result_fields'],
         ];
 
         if (\is_string($options['choice_label'])) {
@@ -96,20 +100,16 @@ class Entity2Type extends AbstractType
         };
 
         $resolver->setDefaults([
-            'autocomplete' => function (OptionsResolver $resolver) {
-                $resolver->setDefaults([
-                    'em' => null,
-                    'max_results' => $this->globalOptions['max_results'] ?? 10,
-                    'search_fields' => null,
-                    'result_fields' => null,
-                ]);
-
-                $resolver->setAllowedTypes('em', ['null', 'string']);
-                $resolver->setAllowedTypes('max_results', ['null', 'int']);
-                $resolver->setAllowedTypes('search_fields', ['null', 'string', 'string[]']);
-                $resolver->setAllowedTypes('result_fields', ['null', 'string', 'string[]']);
-            },
+            'entity_manager' => null,
+            'max_results' => $this->globalOptions['max_results'] ?? 10,
+            'search_fields' => null,
+            'result_fields' => null,
         ]);
+
+        $resolver->setAllowedTypes('entity_manager', ['null', 'string']);
+        $resolver->setAllowedTypes('max_results', ['null', 'int']);
+        $resolver->setAllowedTypes('search_fields', ['null', 'string', 'string[]']);
+        $resolver->setAllowedTypes('result_fields', ['null', 'string', 'string[]']);
 
         $resolver->setNormalizer('expanded', $extendedNormalizer);
         $resolver->setNormalizer('choice_loader', $choiceLoaderNormalizer);

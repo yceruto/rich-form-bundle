@@ -22,13 +22,12 @@ class ProductFormType extends AbstractType
                 'query_builder' => function (EntityRepository $r) {
                     return $r->createQueryBuilder('c')->where('c.enabled = true');
                 },
-                'autocomplete' => [
-                    'result_fields' => 'description',
-                ],
-                'select2_options' => [
+                'result_fields' => 'description',
+                'select2' => [
                     'result_template' => '<strong>{{ text }}</strong><br><small>{{ description }}</small>',
                     'selection_template' => '<strong>{{ text }}</strong> <small>{{ description }}</small>',
                 ],
+                'placeholder' => '( Select a Category )',
             ])
             ->add('tags', Entity2Type::class, [
                 'class' => Tag::class,

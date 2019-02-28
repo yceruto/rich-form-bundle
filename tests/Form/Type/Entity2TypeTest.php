@@ -459,19 +459,17 @@ class Entity2TypeTest extends TypeTestCase
             'query_builder' => function (EntityRepository $r) use (&$queryBuilder) {
                 return $queryBuilder = $r->createQueryBuilder('entity')->where('entity.phoneNumbers is not null');
             },
-            'autocomplete' => [
-                'em' => 'default',
-                'max_results' => 15,
-                'search_fields' => ['name'],
-            ],
+            'entity_manager' => 'default',
+            'max_results' => 15,
+            'search_fields' => ['name'],
         ])->createView();
 
         $options = [
+            'class' => self::SINGLE_IDENT_CLASS,
             'em' => 'default',
             'max_results' => 15,
             'search_fields' => ['name'],
             'result_fields' => null,
-            'class' => self::SINGLE_IDENT_CLASS,
             'text' => 'name',
             'qb_parts' => [
                 'dql_parts' => array_filter($queryBuilder->getDQLParts()),
