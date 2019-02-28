@@ -23,7 +23,7 @@ class ProductFormType extends AbstractType
                     return $r->createQueryBuilder('c')->where('c.enabled = true');
                 },
                 'result_fields' => 'description',
-                'select2' => [
+                'select2_options' => [
                     'result_template' => '<strong>{{ text }}</strong><br><small>{{ description }}</small>',
                     'selection_template' => '<strong>{{ text }}</strong> <small>{{ description }}</small>',
                 ],

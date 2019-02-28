@@ -20,7 +20,7 @@ class Select2TypeExtension extends AbstractTypeExtension
 
     public function buildView(FormView $view, FormInterface $form, array $options): void
     {
-        $view->vars['select2']['options'] = $options['select2'];
+        $view->vars['select2']['options'] = $options['select2_options'];
     }
 
     public function finishView(FormView $view, FormInterface $form, array $options): void
@@ -32,7 +32,7 @@ class Select2TypeExtension extends AbstractTypeExtension
     public function configureOptions(OptionsResolver $resolver): void
     {
         $resolver->setDefaults([
-            'select2' => function (OptionsResolver $resolver, Options $parent) {
+            'select2_options' => function (OptionsResolver $resolver, Options $parent) {
                 $defaultTemplate = function (Options $options) {
                     return $options['template'];
                 };
