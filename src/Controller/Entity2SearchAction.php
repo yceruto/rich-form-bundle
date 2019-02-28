@@ -33,8 +33,7 @@ class Entity2SearchAction
         $qb = $this->createSearchQueryBuilder($searchQuery, $em, $options);
 
         $page = $request->query->get('page', 1);
-        $results = $this->createResults($page, $qb, $options);
-        $count = \count($results);
+        $results = $this->createResults($page, $qb, $count, $options);
 
         return new JsonResponse([
             'results' => $results,
@@ -148,7 +147,7 @@ class Entity2SearchAction
         return $qb;
     }
 
-    private function createResults(int $page, QueryBuilder $qb, array $options): array
+    private function createResults(int $page, QueryBuilder $qb, ?int &$count, array $options): array
     {
         $em = $qb->getEntityManager();
         $classMetadata = $em->getClassMetadata($options['class']);
@@ -160,11 +159,14 @@ class Entity2SearchAction
         $paginator = new Paginator($qb, [] !== $qb->getDQLPart('join'));
         $paginator->setUseOutputWalkers(false);
 
+        $count = 0;
         $results = [];
         foreach ($paginator as $entity) {
-            $data = [
+            ++$count;
+
+            $elem = [
                 'id' => $idReader->getIdValue($entity),
-                'text' => $options['text'] ? $this->propertyAccessor->getValue($entity, $options['text']) : (string) $entity,
+                'text' => (string) ($options['text'] ? $this->propertyAccessor->getValue($entity, $options['text']) : $entity),
             ];
 
             if (null !== $options['result_fields']) {
@@ -176,14 +178,20 @@ class Entity2SearchAction
                     }
 
                     $resultFieldName = \is_int($fieldName) ? $fieldValuePath : $fieldName;
-                    $data['data'][$resultFieldName] = $value;
+                    $elem['data'][$resultFieldName] = $value;
                 }
             }
 
-            $results[] = $data;
+            if (null !== $options['group_by']) {
+                $groupText = (string) $this->propertyAccessor->getValue($entity, $options['group_by']);
+                $results[$groupText]['text'] = $groupText;
+                $results[$groupText]['children'][] = $elem;
+            } else {
+                $results[] = $elem;
+            }
         }
 
-        return $results;
+        return array_values($results);
     }
 
     private function getSearchableFields(array $fieldNames, string $class, QueryBuilder $qb, EntityManagerInterface $em, string $alias = null): iterable

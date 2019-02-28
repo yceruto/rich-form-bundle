@@ -31,6 +31,13 @@ class Category
     public $description;
 
     /**
+     * @var string
+     *
+     * @ORM\Column(type="string")
+     */
+    public $groupName;
+
+    /**
      * @var bool
      *
      * @ORM\Column(type="boolean")

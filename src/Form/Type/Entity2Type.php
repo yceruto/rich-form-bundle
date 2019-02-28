@@ -57,6 +57,7 @@ class Entity2Type extends AbstractType
             'max_results' => $options['max_results'],
             'search_fields' => $options['search_fields'],
             'result_fields' => $options['result_fields'],
+            'group_by' => null !== $options['group_by'] && !\is_callable($options['group_by']) ? $options['group_by']: null,
         ];
 
         if (\is_string($options['choice_label'])) {

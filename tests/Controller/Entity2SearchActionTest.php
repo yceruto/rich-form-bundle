@@ -62,6 +62,7 @@ class Entity2SearchActionTest extends TestCase
             'max_results' => 10,
             'search_fields' => null,
             'result_fields' => null,
+            'group_by' => null,
             'class' => self::SINGLE_IDENT_CLASS,
             'text' => null,
         ]);
@@ -227,6 +228,7 @@ class Entity2SearchActionTest extends TestCase
             'max_results' => 10,
             'search_fields' => 'phoneNumbers',
             'result_fields' => null,
+            'group_by' => null,
             'class' => self::SINGLE_IDENT_CLASS,
             'text' => null,
         ]);
@@ -252,6 +254,7 @@ class Entity2SearchActionTest extends TestCase
             'max_results' => 10,
             'search_fields' => 'single',
             'result_fields' => null,
+            'group_by' => null,
             'class' => self::ASSOCIATION_ENTITY,
             'text' => 'single.name',
         ]);
@@ -277,6 +280,7 @@ class Entity2SearchActionTest extends TestCase
             'max_results' => 10,
             'search_fields' => 'single.name',
             'result_fields' => null,
+            'group_by' => null,
             'class' => self::ASSOCIATION_ENTITY,
             'text' => 'single.name',
         ]);
@@ -302,6 +306,7 @@ class Entity2SearchActionTest extends TestCase
             'max_results' => 10,
             'search_fields' => 'contact.phone',
             'result_fields' => null,
+            'group_by' => null,
             'class' => self::EMBEDDED_ENTITY,
             'text' => 'name',
         ]);
@@ -332,6 +337,7 @@ class Entity2SearchActionTest extends TestCase
                 // custom result field name
                 'contact_phone' => 'contact.phone',
             ],
+            'group_by' => null,
             'class' => self::EMBEDDED_ENTITY,
             'text' => 'name',
         ]);
@@ -355,6 +361,7 @@ class Entity2SearchActionTest extends TestCase
             'max_results' => 10,
             'search_fields' => null,
             'result_fields' => 'groupName',
+            'group_by' => null,
             'class' => self::ITEM_GROUP_CLASS,
             'text' => 'name',
         ]);
@@ -362,6 +369,31 @@ class Entity2SearchActionTest extends TestCase
         $response = $this->controller->__invoke($request, 'hash');
         $this->assertInstanceOf(JsonResponse::class, $response);
         $this->assertSame('{"results":[{"id":1,"text":"Foo","data":{"groupName":"F"}}],"has_next_page":false}', $response->getContent());
+    }
+
+    public function testGroupByResultFields(): void
+    {
+        $entity1 = new GroupableEntity(1, 'Foo', 'A');
+        $entity2 = new GroupableEntity(2, 'Bar', 'A');
+        $entity3 = new GroupableEntity(3, 'Baz', 'B');
+
+        $this->persist([$entity1, $entity2, $entity3]);
+
+        $request = Request::create('/rich-form/entity2/search');
+        $request->setSession($this->session);
+        $this->session->set(Entity2Type::SESSION_ID.'hash', [
+            'em' => 'default',
+            'max_results' => 10,
+            'search_fields' => null,
+            'result_fields' => null,
+            'group_by' => 'groupName',
+            'class' => self::ITEM_GROUP_CLASS,
+            'text' => 'name',
+        ]);
+
+        $response = $this->controller->__invoke($request, 'hash');
+        $this->assertInstanceOf(JsonResponse::class, $response);
+        $this->assertSame('{"results":[{"text":"A","children":[{"id":1,"text":"Foo"},{"id":2,"text":"Bar"}]},{"text":"B","children":[{"id":3,"text":"Baz"}]}],"has_next_page":false}', $response->getContent());
     }
 
     public function testCustomQueryBuilder(): void
@@ -385,6 +417,7 @@ class Entity2SearchActionTest extends TestCase
             'max_results' => 10,
             'search_fields' => null,
             'result_fields' => null,
+            'group_by' => null,
             'class' => self::ITEM_GROUP_CLASS,
             'text' => 'name',
             'qb_parts' => [
@@ -410,6 +443,7 @@ class Entity2SearchActionTest extends TestCase
             'max_results' => 1,
             'search_fields' => null,
             'result_fields' => null,
+            'group_by' => null,
             'class' => self::SINGLE_IDENT_CLASS,
             'text' => null,
         ];

@@ -470,6 +470,7 @@ class Entity2TypeTest extends TypeTestCase
             'max_results' => 15,
             'search_fields' => ['name'],
             'result_fields' => null,
+            'group_by' => null,
             'text' => 'name',
             'qb_parts' => [
                 'dql_parts' => array_filter($queryBuilder->getDQLParts()),

@@ -15,6 +15,7 @@ class AppFixtures extends Fixture
             $category = new Category();
             $category->name = 'Category '.$i;
             $category->description = 'Short description...';
+            $category->groupName = $i % 2 === 0 ? 'odd' : 'even';
             $category->enabled = 13 !== $i;
             $manager->persist($category);
 
