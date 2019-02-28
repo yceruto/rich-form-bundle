@@ -46,7 +46,15 @@
             if (options.templateResult) {
                 const templateResult = options.templateResult;
                 options.templateResult = function (object) {
-                    return object.id ? templateResult.render(object) : object.text;
+                    if (!object.id) {
+                        return object.text;
+                    }
+
+                    const parameters = object.data || {};
+                    parameters['id'] = object.id;
+                    parameters['text'] = object.text;
+
+                    return templateResult.render(parameters);
                 };
             } else {
                 delete options.templateResult;
@@ -55,7 +63,15 @@
             if (options.templateSelection) {
                 const templateSelection = options.templateSelection;
                 options.templateSelection = function (object) {
-                    return object.text ? templateSelection.render(object) : '';
+                    if (!object.text) {
+                        return '';
+                    }
+
+                    const parameters = object.data || {};
+                    parameters['id'] = object.id;
+                    parameters['text'] = object.text;
+
+                    return templateSelection.render(parameters);
                 };
             } else {
                 delete options.templateSelection;

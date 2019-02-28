@@ -168,14 +168,15 @@ class Entity2SearchAction
             ];
 
             if (null !== $options['result_fields']) {
-                foreach ((array) $options['result_fields'] as $field) {
-                    $value = $this->propertyAccessor->getValue($entity, $field);
+                foreach ((array) $options['result_fields'] as $fieldName => $fieldValuePath) {
+                    $value = $this->propertyAccessor->getValue($entity, $fieldValuePath);
 
                     if (\is_object($value)) {
                         $value = (string) $value;
                     }
 
-                    $data[$field] = $value;
+                    $resultFieldName = \is_int($fieldName) ? $fieldValuePath : $fieldName;
+                    $data['data'][$resultFieldName] = $value;
                 }
             }
 

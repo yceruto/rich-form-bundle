@@ -326,14 +326,19 @@ class Entity2SearchActionTest extends TestCase
             'em' => 'default',
             'max_results' => 10,
             'search_fields' => 'contact.phone',
-            'result_fields' => 'contact', // using string cast
+            'result_fields' => [
+                // string cast since Contact is an object
+                0 => 'contact',
+                // custom result field name
+                'contact_phone' => 'contact.phone',
+            ],
             'class' => self::EMBEDDED_ENTITY,
             'text' => 'name',
         ]);
 
         $response = $this->controller->__invoke($request, 'hash');
         $this->assertInstanceOf(JsonResponse::class, $response);
-        $this->assertSame('{"results":[{"id":2,"text":"Bar","contact":"0987654321"}],"has_next_page":false}', $response->getContent());
+        $this->assertSame('{"results":[{"id":2,"text":"Bar","data":{"contact":"0987654321","contact_phone":"0987654321"}}],"has_next_page":false}', $response->getContent());
     }
 
     public function testCustomResultFields(): void
@@ -356,7 +361,7 @@ class Entity2SearchActionTest extends TestCase
 
         $response = $this->controller->__invoke($request, 'hash');
         $this->assertInstanceOf(JsonResponse::class, $response);
-        $this->assertSame('{"results":[{"id":1,"text":"Foo","groupName":"F"}],"has_next_page":false}', $response->getContent());
+        $this->assertSame('{"results":[{"id":1,"text":"Foo","data":{"groupName":"F"}}],"has_next_page":false}', $response->getContent());
     }
 
     public function testCustomQueryBuilder(): void
