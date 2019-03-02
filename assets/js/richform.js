@@ -89,7 +89,7 @@
 
     Entity2.prototype.render = function (template, parameters) {
         return template.replace(/({{ ([\w.]+) }})/g, function (match, pattern, name) {
-            return undefined !== parameters[name] ? parameters[name] : '';
+            return undefined !== parameters[name] && null !== parameters[name] ? parameters[name] : '';
         })
     };
 
