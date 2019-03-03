@@ -94,7 +94,7 @@ class Entity2SearchAction
         $isSearchQueryUuid = 1 === \preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i', $searchQuery);
         $lowerSearchQuery = \mb_strtolower($searchQuery);
 
-        $fields = $this->getSearchableFields((array) $options['search_fields'], $options['class'], $qb, $em);
+        $fields = $this->getSearchableFields((array) $options['search_by'], $options['class'], $qb, $em);
 
         // SELECT entity + (result_fields? + text? field)?
 
@@ -142,6 +142,13 @@ class Entity2SearchAction
             }
         } else {
             $qb->select('entity')->from($options['class'], 'entity');
+        }
+
+        if ($options['order_by']) {
+            $rootAlias = current($qb->getRootAliases());
+            foreach ($options['order_by'] as $field => $order) {
+                $qb->addOrderBy($rootAlias.'.'.$field, $order);
+            }
         }
 
         return $qb;

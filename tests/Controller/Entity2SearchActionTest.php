@@ -60,7 +60,8 @@ class Entity2SearchActionTest extends TestCase
         $this->session->set(Entity2Type::SESSION_ID.'hash', [
             'em' => 'default',
             'max_results' => 10,
-            'search_fields' => null,
+            'search_by' => null,
+            'order_by' => [],
             'result_fields' => null,
             'group_by' => null,
             'class' => self::SINGLE_IDENT_CLASS,
@@ -213,7 +214,7 @@ class Entity2SearchActionTest extends TestCase
         $this->assertSame('{"results":[],"has_next_page":false}', $response->getContent());
     }
 
-    public function testCustomSearchFields(): void
+    public function testSearchBy(): void
     {
         $entity1 = new SingleIntIdEntity(1, '789');
         $entity2 = new SingleIntIdEntity(2, 'Foo');
@@ -226,7 +227,8 @@ class Entity2SearchActionTest extends TestCase
         $this->session->set(Entity2Type::SESSION_ID.'hash', [
             'em' => 'default',
             'max_results' => 10,
-            'search_fields' => 'phoneNumbers',
+            'search_by' => 'phoneNumbers',
+            'order_by' => [],
             'result_fields' => null,
             'group_by' => null,
             'class' => self::SINGLE_IDENT_CLASS,
@@ -238,7 +240,7 @@ class Entity2SearchActionTest extends TestCase
         $this->assertSame('{"results":[{"id":2,"text":"Foo"}],"has_next_page":false}', $response->getContent());
     }
 
-    public function testCustomSearchFieldsWithAssociationEntity(): void
+    public function testSearchByWithAssociationEntity(): void
     {
         $entity1 = new AssociationEntity();
         $entity1->single = new SingleIntIdEntity(1, 'Foo');
@@ -252,7 +254,8 @@ class Entity2SearchActionTest extends TestCase
         $this->session->set(Entity2Type::SESSION_ID.'hash', [
             'em' => 'default',
             'max_results' => 10,
-            'search_fields' => 'single',
+            'search_by' => 'single',
+            'order_by' => [],
             'result_fields' => null,
             'group_by' => null,
             'class' => self::ASSOCIATION_ENTITY,
@@ -264,7 +267,7 @@ class Entity2SearchActionTest extends TestCase
         $this->assertSame('{"results":[{"id":2,"text":"Bar"}],"has_next_page":false}', $response->getContent());
     }
 
-    public function testCustomSearchFieldsWithAssociationEntityField(): void
+    public function testSearchByWithAssociationEntityField(): void
     {
         $entity1 = new AssociationEntity();
         $entity1->single = new SingleIntIdEntity(1, 'Foo');
@@ -278,7 +281,8 @@ class Entity2SearchActionTest extends TestCase
         $this->session->set(Entity2Type::SESSION_ID.'hash', [
             'em' => 'default',
             'max_results' => 10,
-            'search_fields' => 'single.name',
+            'search_by' => 'single.name',
+            'order_by' => [],
             'result_fields' => null,
             'group_by' => null,
             'class' => self::ASSOCIATION_ENTITY,
@@ -290,7 +294,7 @@ class Entity2SearchActionTest extends TestCase
         $this->assertSame('{"results":[{"id":2,"text":"Bar"}],"has_next_page":false}', $response->getContent());
     }
 
-    public function testCustomSearchFieldsWithEmbeddedEntityField(): void
+    public function testSearchByWithEmbeddedEntityField(): void
     {
         $entity1 = new EmbeddedEntity(1, 'Foo');
         $entity1->contact->phone = '1234567890';
@@ -304,7 +308,8 @@ class Entity2SearchActionTest extends TestCase
         $this->session->set(Entity2Type::SESSION_ID.'hash', [
             'em' => 'default',
             'max_results' => 10,
-            'search_fields' => 'contact.phone',
+            'search_by' => 'contact.phone',
+            'order_by' => [],
             'result_fields' => null,
             'group_by' => null,
             'class' => self::EMBEDDED_ENTITY,
@@ -330,7 +335,8 @@ class Entity2SearchActionTest extends TestCase
         $this->session->set(Entity2Type::SESSION_ID.'hash', [
             'em' => 'default',
             'max_results' => 10,
-            'search_fields' => 'contact.phone',
+            'search_by' => 'contact.phone',
+            'order_by' => [],
             'result_fields' => [
                 // string cast since Contact is an object
                 0 => 'contact',
@@ -359,7 +365,8 @@ class Entity2SearchActionTest extends TestCase
         $this->session->set(Entity2Type::SESSION_ID.'hash', [
             'em' => 'default',
             'max_results' => 10,
-            'search_fields' => null,
+            'search_by' => null,
+            'order_by' => [],
             'result_fields' => 'groupName',
             'group_by' => null,
             'class' => self::ITEM_GROUP_CLASS,
@@ -371,7 +378,7 @@ class Entity2SearchActionTest extends TestCase
         $this->assertSame('{"results":[{"id":1,"text":"Foo","data":{"groupName":"F"}}],"has_next_page":false}', $response->getContent());
     }
 
-    public function testGroupByResultFields(): void
+    public function testGroupByResult(): void
     {
         $entity1 = new GroupableEntity(1, 'Foo', 'A');
         $entity2 = new GroupableEntity(2, 'Bar', 'A');
@@ -384,7 +391,8 @@ class Entity2SearchActionTest extends TestCase
         $this->session->set(Entity2Type::SESSION_ID.'hash', [
             'em' => 'default',
             'max_results' => 10,
-            'search_fields' => null,
+            'search_by' => null,
+            'order_by' => [],
             'result_fields' => null,
             'group_by' => 'groupName',
             'class' => self::ITEM_GROUP_CLASS,
@@ -394,6 +402,32 @@ class Entity2SearchActionTest extends TestCase
         $response = $this->controller->__invoke($request, 'hash');
         $this->assertInstanceOf(JsonResponse::class, $response);
         $this->assertSame('{"results":[{"text":"A","children":[{"id":1,"text":"Foo"},{"id":2,"text":"Bar"}]},{"text":"B","children":[{"id":3,"text":"Baz"}]}],"has_next_page":false}', $response->getContent());
+    }
+
+    public function testOrderByResult(): void
+    {
+        $entity1 = new SingleIntIdEntity(1, 'A');
+        $entity2 = new SingleIntIdEntity(2, 'B');
+        $entity3 = new SingleIntIdEntity(3, 'C');
+
+        $this->persist([$entity1, $entity2, $entity3]);
+
+        $request = Request::create('/rich-form/entity2/search');
+        $request->setSession($this->session);
+        $this->session->set(Entity2Type::SESSION_ID.'hash', [
+            'em' => 'default',
+            'max_results' => 10,
+            'search_by' => null,
+            'order_by' => ['name' => 'DESC'],
+            'result_fields' => null,
+            'group_by' => null,
+            'class' => self::SINGLE_IDENT_CLASS,
+            'text' => 'name',
+        ]);
+
+        $response = $this->controller->__invoke($request, 'hash');
+        $this->assertInstanceOf(JsonResponse::class, $response);
+        $this->assertSame('{"results":[{"id":3,"text":"C"},{"id":2,"text":"B"},{"id":1,"text":"A"}],"has_next_page":false}', $response->getContent());
     }
 
     public function testCustomQueryBuilder(): void
@@ -415,7 +449,8 @@ class Entity2SearchActionTest extends TestCase
         $this->session->set(Entity2Type::SESSION_ID.'hash', [
             'em' => 'default',
             'max_results' => 10,
-            'search_fields' => null,
+            'search_by' => null,
+            'order_by' => [],
             'result_fields' => null,
             'group_by' => null,
             'class' => self::ITEM_GROUP_CLASS,
@@ -441,7 +476,8 @@ class Entity2SearchActionTest extends TestCase
         $options = [
             'em' => 'default',
             'max_results' => 1,
-            'search_fields' => null,
+            'search_by' => null,
+            'order_by' => [],
             'result_fields' => null,
             'group_by' => null,
             'class' => self::SINGLE_IDENT_CLASS,

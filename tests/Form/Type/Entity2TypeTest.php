@@ -125,7 +125,8 @@ class Entity2TypeTest extends TypeTestCase
     }
 
     /**
-     * @expectedException \LogicException
+     * @expectedException \RuntimeException
+     * @expectedExceptionMessage The "expanded" option is not supported.
      */
     public function testExpandedOptionIsNotSupported(): void
     {
@@ -433,6 +434,7 @@ class Entity2TypeTest extends TypeTestCase
 
     /**
      * @expectedException \RuntimeException
+     * @expectedExceptionMessage Composite identifier is not supported.
      */
     public function testCompositeIdentifierIsNotSupported(): void
     {
@@ -461,14 +463,15 @@ class Entity2TypeTest extends TypeTestCase
             },
             'entity_manager' => 'default',
             'max_results' => 15,
-            'search_fields' => ['name'],
+            'search_by' => ['name'],
         ])->createView();
 
         $options = [
             'class' => self::SINGLE_IDENT_CLASS,
             'em' => 'default',
             'max_results' => 15,
-            'search_fields' => ['name'],
+            'search_by' => ['name'],
+            'order_by' => [],
             'result_fields' => null,
             'group_by' => null,
             'text' => 'name',

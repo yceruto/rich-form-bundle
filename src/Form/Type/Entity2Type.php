@@ -55,7 +55,8 @@ class Entity2Type extends AbstractType
             'class' => $options['class'],
             'em' => $options['entity_manager'],
             'max_results' => $options['max_results'],
-            'search_fields' => $options['search_fields'],
+            'search_by' => $options['search_by'],
+            'order_by' => $options['order_by'],
             'result_fields' => $options['result_fields'],
             'group_by' => null !== $options['group_by'] && !\is_callable($options['group_by']) ? $options['group_by']: null,
         ];
@@ -68,7 +69,7 @@ class Entity2Type extends AbstractType
             $autocompleteOptions['text'] = null;
         }
 
-        if ($options['query_builder']) {
+        if (null !== $options['query_builder']) {
             $autocompleteOptions['qb_parts'] = $this->getQueryBuilderPartsForSerialize($options['query_builder']);
         }
 
@@ -82,7 +83,7 @@ class Entity2Type extends AbstractType
     {
         $extendedNormalizer = function (Options $options, $expanded) {
             if (true === $expanded) {
-                throw new \LogicException('The "expanded" option is not supported.');
+                throw new \RuntimeException('The "expanded" option is not supported.');
             }
 
             return $expanded;
@@ -100,20 +101,49 @@ class Entity2Type extends AbstractType
             return new Entity2LoaderDecorator($loader);
         };
 
+        $orderByNormalizer = function (Options $options, $value) {
+            $orderBy = [];
+
+            if (null !== $options['group_by']) {
+                array_unshift($orderBy, (string) $options['group_by']);
+            }
+
+            foreach ((array) $value as $field => $order) {
+                if (\is_int($field)) {
+                    $field = $order;
+                    $order = 'ASC';
+                }
+
+                $order = strtoupper($order);
+
+                if ('ASC' !== $order && 'DESC' !== $order) {
+                    throw new InvalidArgumentException(sprintf('Unexpected order type "%s", allowed values are "ASC" or "DESC".', $order));
+                }
+
+                $orderBy[$field] = $order;
+            }
+
+            return $orderBy;
+        };
+
         $resolver->setDefaults([
             'entity_manager' => null,
-            'max_results' => $this->globalOptions['max_results'] ?? 10,
-            'search_fields' => null,
+            'search_by' => null,
+            'order_by' => null,
             'result_fields' => null,
+            'max_results' => $this->globalOptions['max_results'] ?? 10,
         ]);
 
         $resolver->setAllowedTypes('entity_manager', ['null', 'string']);
-        $resolver->setAllowedTypes('max_results', ['null', 'int']);
-        $resolver->setAllowedTypes('search_fields', ['null', 'string', 'string[]']);
+        $resolver->setAllowedTypes('search_by', ['null', 'string', 'string[]']);
+        $resolver->setAllowedTypes('order_by', ['null', 'string', 'array']);
         $resolver->setAllowedTypes('result_fields', ['null', 'string', 'string[]']);
+        $resolver->setAllowedTypes('max_results', ['null', 'int']);
+        $resolver->setAllowedTypes('group_by', ['null', 'string', 'Symfony\Component\PropertyAccess\PropertyPath']);
 
         $resolver->setNormalizer('expanded', $extendedNormalizer);
         $resolver->setNormalizer('choice_loader', $choiceLoaderNormalizer);
+        $resolver->setNormalizer('order_by', $orderByNormalizer);
     }
 
     public function getBlockPrefix(): string
