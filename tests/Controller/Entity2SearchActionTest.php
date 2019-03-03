@@ -9,7 +9,9 @@ use PHPUnit\Framework\TestCase;
 use Symfony\Bridge\Doctrine\Test\DoctrineTestHelper;
 use Symfony\Bridge\Doctrine\Tests\Fixtures\AssociationEntity;
 use Symfony\Bridge\Doctrine\Tests\Fixtures\GroupableEntity;
+use Symfony\Bridge\Doctrine\Tests\Fixtures\SingleAssociationToIntIdEntity;
 use Symfony\Bridge\Doctrine\Tests\Fixtures\SingleIntIdEntity;
+use Symfony\Bridge\Doctrine\Tests\Fixtures\SingleIntIdNoToStringEntity;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Session\Attribute\AttributeBag;
@@ -428,6 +430,31 @@ class Entity2SearchActionTest extends TestCase
         $response = $this->controller->__invoke($request, 'hash');
         $this->assertInstanceOf(JsonResponse::class, $response);
         $this->assertSame('{"results":[{"id":3,"text":"C"},{"id":2,"text":"B"},{"id":1,"text":"A"}],"has_next_page":false}', $response->getContent());
+    }
+
+    public function testChainOrderByResult(): void
+    {
+        $entity1 = new SingleAssociationToIntIdEntity($entity2 = new SingleIntIdNoToStringEntity(1, 'A'), 'Foo');
+        $entity3 = new SingleAssociationToIntIdEntity($entity4 = new SingleIntIdNoToStringEntity(2, 'B'), 'Bar');
+
+        $this->persist([$entity1, $entity2, $entity3, $entity4]);
+
+        $request = Request::create('/rich-form/entity2/search');
+        $request->setSession($this->session);
+        $this->session->set(Entity2Type::SESSION_ID.'hash', [
+            'em' => 'default',
+            'max_results' => 10,
+            'search_by' => null,
+            'order_by' => ['entity.name' => 'DESC'],
+            'result_fields' => null,
+            'group_by' => null,
+            'class' => self::SINGLE_ASSOC_IDENT_CLASS,
+            'text' => 'name',
+        ]);
+
+        $response = $this->controller->__invoke($request, 'hash');
+        $this->assertInstanceOf(JsonResponse::class, $response);
+        $this->assertSame('{"results":[{"id":2,"text":"Bar"},{"id":1,"text":"Foo"}],"has_next_page":false}', $response->getContent());
     }
 
     public function testCustomQueryBuilder(): void

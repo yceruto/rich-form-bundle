@@ -94,12 +94,16 @@ class Entity2SearchAction
         $isSearchQueryUuid = 1 === \preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i', $searchQuery);
         $lowerSearchQuery = \mb_strtolower($searchQuery);
 
-        $fields = $this->getSearchableFields((array) $options['search_by'], $options['class'], $qb, $em);
+        $fields = $this->getFields((array) $options['search_by'], $options['class'], $qb, $em);
 
-        // SELECT entity + (result_fields? + text? field)?
+        // SELECT entity, result_fields?
 
         $orX = $qb->expr()->orX();
         foreach ($fields as $fieldName => $fieldMapping) {
+            if (!$fieldMapping['is_searchable_field']) {
+                continue;
+            }
+
             // this complex condition is needed to avoid issues on PostgreSQL databases
             if (
                 ($fieldMapping['is_small_integer_field'] && $isSearchQuerySmallInteger) ||
@@ -147,7 +151,9 @@ class Entity2SearchAction
         if ($options['order_by']) {
             $rootAlias = current($qb->getRootAliases());
             foreach ($options['order_by'] as $field => $order) {
-                $qb->addOrderBy($rootAlias.'.'.$field, $order);
+                foreach ($this->getField($rootAlias, $field, $options['class'], $qb, $em, false) as $fieldName => $_) {
+                    $qb->addOrderBy($fieldName, $order);
+                }
             }
         }
 
@@ -164,7 +170,6 @@ class Entity2SearchAction
         $qb->setMaxResults($options['max_results']);
 
         $paginator = new Paginator($qb, [] !== $qb->getDQLPart('join'));
-        $paginator->setUseOutputWalkers(false);
 
         $count = 0;
         $results = [];
@@ -201,7 +206,7 @@ class Entity2SearchAction
         return array_values($results);
     }
 
-    private function getSearchableFields(array $fieldNames, string $class, QueryBuilder $qb, EntityManagerInterface $em, string $alias = null): iterable
+    private function getFields(array $fieldNames, string $class, QueryBuilder $qb, EntityManagerInterface $em, string $alias = null): iterable
     {
         $alias = $alias ?? current($qb->getRootAliases());
 
@@ -210,11 +215,11 @@ class Entity2SearchAction
         }
 
         foreach ($fieldNames as $fieldName) {
-            yield from $this->getSearchableField($alias, $fieldName, $class, $qb, $em);
+            yield from $this->getField($alias, $fieldName, $class, $qb, $em);
         }
     }
 
-    private function getSearchableField(string $alias, string $fieldName, string $class, QueryBuilder $qb, EntityManagerInterface $em): iterable
+    private function getField(string $alias, string $fieldName, string $class, QueryBuilder $qb, EntityManagerInterface $em, bool $allowAssoc = true): iterable
     {
         $classMetadata = $em->getClassMetadata($class);
 
@@ -223,17 +228,18 @@ class Entity2SearchAction
 
             $fieldMapping = $this->getFieldInfo($fieldName, $classMetadata);
 
-            if ($fieldMapping['is_searchable_field']) {
-                yield $alias.'.'.$fieldName => $fieldMapping;
-            }
-        } elseif ($classMetadata->hasAssociation($fieldName)) {
+            yield $alias.'.'.$fieldName => $fieldMapping;
+        } elseif ($allowAssoc && $classMetadata->hasAssociation($fieldName)) {
             // (2) Association field
 
+            $fieldAlias = $fieldName;
             if (!\in_array($fieldName, $qb->getAllAliases(), true)) {
-                $qb->leftJoin($alias.'.'.$fieldName, $fieldName);
+                $qb->leftJoin($alias.'.'.$fieldName, $fieldAlias);
+            } elseif ($alias === $fieldName && [$alias] === $qb->getAllAliases()) {
+                $qb->leftJoin($alias.'.'.$fieldName, $fieldAlias .= '1');
             }
 
-            yield from $this->getSearchableFields([], $classMetadata->getAssociationTargetClass($fieldName), $qb, $em, $fieldName);
+            yield from $this->getFields([], $classMetadata->getAssociationTargetClass($fieldName), $qb, $em, $fieldAlias);
         } elseif (false !== \strpos($fieldName, '.')) {
             // (3) Chain fields (e.g. foo.bar.baz)
 
@@ -241,11 +247,14 @@ class Entity2SearchAction
             [$firstFieldName, $secondFieldName] = \explode('.', $fieldName, 2);
 
             if ($classMetadata->hasAssociation($firstFieldName)) {
+                $fieldAlias = $firstFieldName;
                 if (!\in_array($firstFieldName, $qb->getAllAliases(), true)) {
-                    $qb->leftJoin($alias.'.'.$firstFieldName, $firstFieldName);
+                    $qb->leftJoin($alias.'.'.$firstFieldName, $fieldAlias);
+                } elseif ($alias === $firstFieldName && [$alias] === $qb->getAllAliases()) {
+                    $qb->leftJoin($alias.'.'.$firstFieldName, $fieldAlias .= '1');
                 }
 
-                yield from $this->getSearchableField($firstFieldName, $secondFieldName, $classMetadata->getAssociationTargetClass($firstFieldName), $qb, $em);
+                yield from $this->getField($fieldAlias, $secondFieldName, $classMetadata->getAssociationTargetClass($firstFieldName), $qb, $em);
             }
         }
 
