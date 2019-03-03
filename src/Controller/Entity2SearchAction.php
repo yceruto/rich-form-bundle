@@ -170,6 +170,7 @@ class Entity2SearchAction
         $qb->setMaxResults($options['max_results']);
 
         $paginator = new Paginator($qb, [] !== $qb->getDQLPart('join'));
+        $paginator->setUseOutputWalkers($classMetadata->hasAssociation($classMetadata->getSingleIdentifierFieldName()));
 
         $count = 0;
         $results = [];
