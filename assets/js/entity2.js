@@ -8,20 +8,34 @@
         this.$element = $(element);
         this.options = $.extend({}, Entity2.DEFAULTS, this.$element.data(), options);
 
-        this.initSelect2(this.options.select2Options);
+        this.initSelect2(this.options.entity2Options, this.options.select2Options);
     };
 
     Entity2.DEFAULTS = {};
 
-    Entity2.prototype.initSelect2 = function (options) {
+    Entity2.prototype.initSelect2 = function (entity2Options, select2Options) {
         const self = this;
 
-        options.ajax.data = function (params) {
-            return { 'query': params.term, 'page': params.page };
+        select2Options.ajax.data = function (params) {
+            let dynamicParamValues = {}, paramName, $formField;
+
+            if (entity2Options.dynamicParams) {
+                for (const id in entity2Options.dynamicParams) {
+                    $formField = $(id);
+                    if (0 === $formField.length || ('INPUT' !== $formField[0].tagName && 'SELECT' !== $formField[0].tagName)) {
+                        continue;
+                    }
+
+                    paramName = entity2Options.dynamicParams[id];
+                    dynamicParamValues[paramName] = $formField.val();
+                }
+            }
+
+            return { 'query': params.term, 'page': params.page, 'dyn': dynamicParamValues };
         };
 
         // to indicate that infinite scrolling can be used
-        options.ajax.processResults = function (data, params) {
+        select2Options.ajax.processResults = function (data, params) {
             return {
                 results: data.results,
                 pagination: {
@@ -30,17 +44,17 @@
             };
         };
 
-        options.placeholder = {
+        select2Options.placeholder = {
             'id': '',
-            'text': options.placeholder,
+            'text': select2Options.placeholder,
         };
 
-        if (options.escapeMarkup) {
-            options.escapeMarkup = function (markup) { return markup; };
+        if (select2Options.escapeMarkup) {
+            select2Options.escapeMarkup = function (markup) { return markup; };
 
-            if (options.templateResult) {
-                const templateResult = options.templateResult;
-                options.templateResult = function (object) {
+            if (select2Options.templateResult) {
+                const templateResult = select2Options.templateResult;
+                select2Options.templateResult = function (object) {
                     if (!object.id) {
                         return object.text;
                     }
@@ -52,12 +66,12 @@
                     return self.render(templateResult, parameters);
                 };
             } else {
-                delete options.templateResult;
+                delete select2Options.templateResult;
             }
 
-            if (options.templateSelection) {
-                const templateSelection = options.templateSelection;
-                options.templateSelection = function (object) {
+            if (select2Options.templateSelection) {
+                const templateSelection = select2Options.templateSelection;
+                select2Options.templateSelection = function (object) {
                     if (!object.text) {
                         return '';
                     }
@@ -69,22 +83,23 @@
                     return self.render(templateSelection, parameters);
                 };
             } else {
-                delete options.templateSelection;
+                delete select2Options.templateSelection;
             }
         } else {
-            delete options.escapeMarkup;
-            delete options.templateResult;
-            delete options.templateSelection;
+            delete select2Options.escapeMarkup;
+            delete select2Options.templateResult;
+            delete select2Options.templateSelection;
         }
 
         // https://select2.org/troubleshooting/common-problems
         if (this.$element.closest('.modal').length > 0) {
-            options.dropdownParent = this.$element.closest('.modal');
+            select2Options.dropdownParent = this.$element.closest('.modal');
         }
 
+        this.$element.removeAttr('data-entity2-options');
         this.$element.removeAttr('data-select2-options');
 
-        this.$element.select2(options);
+        this.$element.select2(select2Options);
     };
 
     Entity2.prototype.render = function (template, parameters) {

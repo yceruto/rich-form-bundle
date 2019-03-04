@@ -10,7 +10,7 @@ Encore
     .enableVersioning(false)
     .disableSingleRuntimeChunk()
 
-    .addEntry('richform', './assets/js/richform.js')
+    .addEntry('entity2', './assets/js/entity2.js')
 ;
 
 module.exports = Encore.getWebpackConfig();
