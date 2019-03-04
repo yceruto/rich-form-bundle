@@ -1,8 +1,8 @@
 {
   "entrypoints": {
-    "richform": {
+    "entity2": {
       "js": [
-        "/richform.js"
+        "/entity2.js"
       ]
     }
   }
