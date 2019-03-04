@@ -99,7 +99,7 @@ class Entity2Type extends AbstractType
             $dynamicParams[$selector] = $dynamicParam->getName();
         }
 
-        $view->vars['entity2']['dynamic_params'] = $dynamicParams;
+        $view->vars['attr']['data-entity2-options'] = \json_encode(['dynamicParams' => $dynamicParams]);
     }
 
     public function configureOptions(OptionsResolver $resolver): void

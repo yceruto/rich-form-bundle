@@ -565,6 +565,7 @@ class Entity2TypeTest extends TypeTestCase
             'dynamic_params' => ['#form_phone_number' => $dynamicParam],
         ])->createView();
 
-        $this->assertSame(['#form_phone_number' => 'number'], $view->vars['entity2']['dynamic_params']);
+        $expected = \json_encode(['dynamicParams' => ['#form_phone_number' => 'number']]);
+        $this->assertSame($expected, $view->vars['attr']['data-entity2-options']);
     }
 }
