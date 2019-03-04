@@ -161,14 +161,37 @@ class Entity2TypeTest extends TypeTestCase
 
         $this->persist([$entity1, $entity2]);
 
-        $field = $this->factory->createNamed('name', static::TESTED_TYPE, $entity1, [
+        $view = $this->factory->createNamed('name', static::TESTED_TYPE, $entity2, [
             'em' => 'default',
             'class' => self::SINGLE_IDENT_CLASS,
             'choice_label' => 'name',
-        ]);
+        ])->createView();
 
-        $this->assertCount(1, $field->createView()->vars['choices']);
-        $this->assertEquals([1 => new ChoiceView($entity1, '1', 'Foo')], $field->createView()->vars['choices']);
+        $this->assertCount(1, $view->vars['choices']);
+        $this->assertEquals([2 => new ChoiceView($entity2, '2', 'Bar')], $view->vars['choices']);
+    }
+
+    public function testDefaultAttrDataForBoundObject(): void
+    {
+        $entity1 = new SingleIntIdEntity(1, 'Foo');
+        $entity2 = new SingleIntIdEntity(2, 'Bar');
+        $entity2->phoneNumbers = ['12345'];
+
+        $this->persist([$entity1, $entity2]);
+
+        $view = $this->factory->createNamed('name', static::TESTED_TYPE, $entity2, [
+            'em' => 'default',
+            'class' => self::SINGLE_IDENT_CLASS,
+            'choice_label' => 'name',
+            'result_fields' => ['phoneNumbers']
+        ])->createView();
+
+        $expectedAttr = [
+            'data-data' => '{"id":"2","text":"Bar","title":"Bar","selected":true,"data":{"phoneNumbers":["12345"]}}',
+        ];
+
+        $this->assertCount(1, $view->vars['choices']);
+        $this->assertEquals([2 => new ChoiceView($entity2, '2', 'Bar', $expectedAttr)], $view->vars['choices']);
     }
 
     public function testSingleChoiceWithCustomChoiceValue(): void

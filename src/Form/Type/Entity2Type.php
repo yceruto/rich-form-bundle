@@ -7,6 +7,8 @@ use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\ChoiceList\Factory\CachingFactoryDecorator;
 use Symfony\Component\Form\ChoiceList\LazyChoiceList;
+use Symfony\Component\Form\ChoiceList\View\ChoiceGroupView;
+use Symfony\Component\Form\ChoiceList\View\ChoiceView;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Form\FormEvent;
 use Symfony\Component\Form\FormEvents;
@@ -18,6 +20,8 @@ use Symfony\Component\OptionsResolver\Exception\InvalidArgumentException;
 use Symfony\Component\OptionsResolver\Exception\InvalidOptionsException;
 use Symfony\Component\OptionsResolver\Options;
 use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Component\PropertyAccess\PropertyAccess;
+use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 use Symfony\Component\PropertyAccess\PropertyPath;
 use Yceruto\Bundle\RichFormBundle\Doctrine\Query\DynamicParameter;
 use Yceruto\Bundle\RichFormBundle\Form\ChoiceList\Loader\Entity2LoaderDecorator;
@@ -27,11 +31,13 @@ class Entity2Type extends AbstractType
     public const SESSION_ID = 'richform.entity2.';
 
     private $session;
+    private $propertyAccessor;
     private $globalOptions;
 
-    public function __construct(Session $session, array $globalOptions = [])
+    public function __construct(Session $session, PropertyAccessorInterface $propertyAccessor = null, array $globalOptions = [])
     {
         $this->session = $session;
+        $this->propertyAccessor = $propertyAccessor ?: PropertyAccess::createPropertyAccessor();
         $this->globalOptions = $globalOptions;
     }
 
@@ -88,7 +94,6 @@ class Entity2Type extends AbstractType
     public function finishView(FormView $view, FormInterface $form, array $options): void
     {
         $dynamicParams = [];
-
         /** @var DynamicParameter $dynamicParam */
         foreach ($options['dynamic_params'] as $selector => $dynamicParam) {
             if (null !== $view->parent && isset($view->parent->children[$selector]->vars['id'])) {
@@ -98,8 +103,11 @@ class Entity2Type extends AbstractType
 
             $dynamicParams[$selector] = $dynamicParam->getName();
         }
-
         $view->vars['attr']['data-entity2-options'] = \json_encode(['dynamicParams' => $dynamicParams]);
+
+        if ($view->vars['choices'] && $options['result_fields']) {
+            $this->preselectData($view->vars['choices'], (array) $options['result_fields']);
+        }
     }
 
     public function configureOptions(OptionsResolver $resolver): void
@@ -200,7 +208,7 @@ class Entity2Type extends AbstractType
         return EntityType::class;
     }
 
-    public function getSerializableQueryBuilderParts(QueryBuilder $queryBuilder): array
+    protected function getSerializableQueryBuilderParts(QueryBuilder $queryBuilder): array
     {
         $parameters = [];
         foreach ($queryBuilder->getParameters() as $parameter) {
@@ -227,5 +235,36 @@ class Entity2Type extends AbstractType
             'dql_parts' => array_filter($queryBuilder->getDQLParts()),
             'parameters' => $parameters,
         ];
+    }
+
+    protected function preselectData(array $choices, array $resultFields): void
+    {
+        foreach ($choices as $choiceView) {
+            if ($choiceView instanceof ChoiceGroupView) {
+                $this->preselectData($choiceView->choices, $resultFields);
+                continue;
+            }
+
+            $data = [
+                'id' => $choiceView->value,
+                'text' => $choiceView->label,
+                'title' => $choiceView->label,
+                'selected' => true,
+            ];
+
+            /** @var ChoiceView $choiceView */
+            foreach ($resultFields as $fieldName => $fieldValuePath) {
+                $value = $this->propertyAccessor->getValue($choiceView->data, $fieldValuePath);
+
+                if (\is_object($value)) {
+                    $value = (string) $value;
+                }
+
+                $resultFieldName = \is_int($fieldName) ? $fieldValuePath : $fieldName;
+                $data['data'][$resultFieldName] = $value;
+            }
+
+            $choiceView->attr['data-data'] = \json_encode($data);
+        }
     }
 }

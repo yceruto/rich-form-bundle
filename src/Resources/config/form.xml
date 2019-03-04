@@ -7,6 +7,7 @@
         <service id="richform.form.type" class="Yceruto\Bundle\RichFormBundle\Form\Type\Entity2Type">
             <tag name="form.type" alias="entity2" />
             <argument type="service" id="session" />
+            <argument type="service" id="property_accessor" on-invalid="null" />
             <argument>%richform.config.entity2.options%</argument>
         </service>
     </services>
