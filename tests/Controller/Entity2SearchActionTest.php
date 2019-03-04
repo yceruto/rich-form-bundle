@@ -575,7 +575,7 @@ class Entity2SearchActionTest extends TestCase
 
         $this->persist([$entity1, $entity2, $entity3]);
 
-        $request = Request::create('/rich-form/entity2/search');
+        $request = Request::create('/rich-form/entity2/search?dyn[group]=');
         $request->setSession($this->session);
         $this->session->set(Entity2Type::SESSION_ID.'hash', [
             'em' => 'default',
@@ -596,7 +596,7 @@ class Entity2SearchActionTest extends TestCase
         $this->assertSame('{"results":[{"id":1,"text":"Foo"},{"id":3,"text":"Baz"},{"id":2,"text":"Bar"}],"has_next_page":false}', $response->getContent());
     }
 
-    public function testDynamicParamMissingValueWithDefault(): void
+    public function testOptionalDynamicParamEmptyValueWithDefault(): void
     {
         $entity1 = new GroupableEntity(1, 'Foo', 'A');
         $entity2 = new GroupableEntity(2, 'Bar', 'B');
@@ -604,7 +604,7 @@ class Entity2SearchActionTest extends TestCase
 
         $this->persist([$entity1, $entity2, $entity3]);
 
-        $request = Request::create('/rich-form/entity2/search');
+        $request = Request::create('/rich-form/entity2/search?dyn[group]=');
         $request->setSession($this->session);
         $this->session->set(Entity2Type::SESSION_ID.'hash', [
             'em' => 'default',

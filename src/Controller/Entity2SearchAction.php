@@ -158,14 +158,16 @@ class Entity2SearchAction
             foreach ($options['qb_dynamic_params'] as $param) {
                 $value = $options['dynamic_params_values'][$param->getName()] ?? null;
 
-                if (null === $value || '' === $value) {
-                    if (!$param->isOptional()) {
-                        throw new \RuntimeException(sprintf('Missing value for dynamic parameter "%s".', $param->getName()));
-                    }
+                if (null === $value) {
+                    throw new \RuntimeException(sprintf('Missing value for dynamic parameter "%s".', $param->getName()));
+                }
 
-                    if (null === $param->getValue()) {
+                if ('' === $value) {
+                    if ($param->isOptional() && null === $param->getValue()) {
                         continue;
                     }
+
+                    $value = $param->getValue();
                 }
 
                 foreach ($param->getWhere() as $condition) {
@@ -178,7 +180,6 @@ class Entity2SearchAction
                     }
                 }
 
-                $value = null !== $value && '' !== $value ? $value : $param->getValue();
                 $qb->setParameter($param->getName(), $value, $param->getType());
             }
         }
