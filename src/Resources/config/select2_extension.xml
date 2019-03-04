@@ -5,8 +5,9 @@
 
     <services>
         <service id="richform.select2.type_extension" class="Yceruto\Bundle\RichFormBundle\Form\Extension\Select2TypeExtension">
-            <argument>%richform.config.select2.options%</argument>
             <tag name="form.type_extension" extended-type="Yceruto\Bundle\RichFormBundle\Form\Type\Entity2Type" />
+            <argument type="service" id="property_accessor" />
+            <argument>%richform.config.select2.options%</argument>
         </service>
     </services>
 </container>

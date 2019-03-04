@@ -3,18 +3,24 @@
 namespace Yceruto\Bundle\RichFormBundle\Form\Extension;
 
 use Symfony\Component\Form\AbstractTypeExtension;
+use Symfony\Component\Form\ChoiceList\View\ChoiceGroupView;
+use Symfony\Component\Form\ChoiceList\View\ChoiceView;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\Form\FormView;
 use Symfony\Component\OptionsResolver\Options;
 use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Component\PropertyAccess\PropertyAccess;
+use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 use Yceruto\Bundle\RichFormBundle\Form\Type\Entity2Type;
 
 class Select2TypeExtension extends AbstractTypeExtension
 {
+    private $propertyAccessor;
     private $globalOptions;
 
-    public function __construct(array $globalOptions = [])
+    public function __construct(PropertyAccessorInterface $propertyAccessor = null, array $globalOptions = [])
     {
+        $this->propertyAccessor = $propertyAccessor ?? PropertyAccess::createPropertyAccessor();
         $this->globalOptions = $globalOptions;
     }
 
@@ -25,6 +31,11 @@ class Select2TypeExtension extends AbstractTypeExtension
 
     public function finishView(FormView $view, FormInterface $form, array $options): void
     {
+        // <option> attr with selected data
+        if ($view->vars['choices'] && $options['result_fields'] && $options['select2_options']['selection_template']) {
+            $this->preselectData($view->vars['choices'], (array) $options['result_fields']);
+        }
+
         // Add a custom block prefix to ease select2 theming:
         \array_splice($view->vars['block_prefixes'], -1, 0, 'entity2_select2');
     }
@@ -80,5 +91,36 @@ class Select2TypeExtension extends AbstractTypeExtension
     public static function getExtendedTypes(): iterable
     {
         return [Entity2Type::class];
+    }
+
+    protected function preselectData(array $choices, array $resultFields): void
+    {
+        foreach ($choices as $choiceView) {
+            if ($choiceView instanceof ChoiceGroupView) {
+                $this->preselectData($choiceView->choices, $resultFields);
+                continue;
+            }
+
+            $data = [
+                'id' => $choiceView->value,
+                'text' => $choiceView->label,
+                'title' => $choiceView->label,
+                'selected' => true,
+            ];
+
+            /** @var ChoiceView $choiceView */
+            foreach ($resultFields as $fieldName => $fieldValuePath) {
+                $value = $this->propertyAccessor->getValue($choiceView->data, $fieldValuePath);
+
+                if (\is_object($value)) {
+                    $value = (string) $value;
+                }
+
+                $resultFieldName = \is_int($fieldName) ? $fieldValuePath : $fieldName;
+                $data['data'][$resultFieldName] = $value;
+            }
+
+            $choiceView->attr['data-data'] = \json_encode($data);
+        }
     }
 }

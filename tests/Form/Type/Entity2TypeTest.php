@@ -20,6 +20,7 @@ use Symfony\Component\HttpFoundation\Session\Flash\FlashBag;
 use Symfony\Component\HttpFoundation\Session\Session;
 use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
 use Yceruto\Bundle\RichFormBundle\Doctrine\Query\DynamicParameter;
+use Yceruto\Bundle\RichFormBundle\Form\Extension\Select2TypeExtension;
 use Yceruto\Bundle\RichFormBundle\Form\Type\Entity2Type;
 
 class Entity2TypeTest extends TypeTestCase
@@ -107,6 +108,11 @@ class Entity2TypeTest extends TypeTestCase
         ]);
     }
 
+    protected function getTypeExtensions(): array
+    {
+        return [new Select2TypeExtension()];
+    }
+
     protected function getTypes(): array
     {
         $class = static::TESTED_TYPE;
@@ -183,7 +189,10 @@ class Entity2TypeTest extends TypeTestCase
             'em' => 'default',
             'class' => self::SINGLE_IDENT_CLASS,
             'choice_label' => 'name',
-            'result_fields' => ['phoneNumbers']
+            'result_fields' => ['phoneNumbers'],
+            'select2_options' => [
+                'selection_template' => '{{ text }} - {{ phoneNumbers }}',
+            ],
         ])->createView();
 
         $expectedAttr = [
