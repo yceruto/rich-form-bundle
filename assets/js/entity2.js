@@ -8,12 +8,12 @@
         this.$element = $(element);
         this.options = $.extend({}, Entity2.DEFAULTS, this.$element.data(), options);
 
-        this.initSelect2(this.options.entity2Options, this.options.select2Options);
+        this.init(this.options.entity2Options, this.options.select2Options);
     };
 
     Entity2.DEFAULTS = {};
 
-    Entity2.prototype.initSelect2 = function (entity2Options, select2Options) {
+    Entity2.prototype.init = function (entity2Options, select2Options) {
         const self = this;
 
         select2Options.ajax.data = function (params) {
