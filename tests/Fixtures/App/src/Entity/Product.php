@@ -25,6 +25,13 @@ class Product
     public $name;
 
     /**
+     * @var ProductType
+     *
+     * @ORM\ManyToOne(targetEntity="ProductType")
+     */
+    public $type;
+
+    /**
      * @var Category
      *
      * @ORM\ManyToOne(targetEntity="Category")

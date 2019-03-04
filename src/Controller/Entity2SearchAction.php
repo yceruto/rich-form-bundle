@@ -11,6 +11,7 @@ use Symfony\Bridge\Doctrine\Form\ChoiceList\IdReader;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
+use Yceruto\Bundle\RichFormBundle\Doctrine\Query\DynamicParameter;
 use Yceruto\Bundle\RichFormBundle\Form\Type\Entity2Type;
 
 class Entity2SearchAction
@@ -29,10 +30,10 @@ class Entity2SearchAction
         $options = $this->getOptions($request, $hash);
         $em = $this->getEntityManager($options);
 
-        $searchQuery = $request->query->get('query', '');
+        $searchQuery = $request->get('query', '');
         $qb = $this->createSearchQueryBuilder($searchQuery, $em, $options);
 
-        $page = $request->query->get('page', 1);
+        $page = $request->get('page', 1);
         $results = $this->createResults($page, $qb, $count, $options);
 
         return new JsonResponse([
@@ -62,6 +63,8 @@ class Entity2SearchAction
             throw new \RuntimeException('Missing options.');
         }
 
+        $options['dynamic_params_values'] = $request->get('dyn', []);
+
         return $options;
     }
 
@@ -82,7 +85,7 @@ class Entity2SearchAction
 
     private function createSearchQueryBuilder(string $searchQuery, EntityManagerInterface $em, array $options): QueryBuilder
     {
-        $qb = clone $this->createQueryBuilder($em, $options);
+        $qb = $this->createQueryBuilder($em, $options);
 
         if ('' === $searchQuery) {
             return $qb;
@@ -144,8 +147,38 @@ class Entity2SearchAction
             foreach ($options['qb_parts']['parameters'] as $parameter) {
                 $qb->setParameter($parameter['name'], $parameter['value'], $parameter['type']);
             }
+
+            $qb = clone $qb;
         } else {
             $qb->select('entity')->from($options['class'], 'entity');
+        }
+
+        if (isset($options['qb_dynamic_params'])) {
+            /** @var DynamicParameter $param */
+            foreach ($options['qb_dynamic_params'] as $param) {
+                $value = $options['dynamic_params_values'][$param->getName()] ?? null;
+
+                if (null === $value || '' === $value) {
+                    if ($param->isOptional() && null === $param->getValue()) {
+                        continue;
+                    }
+
+                    throw new \RuntimeException(sprintf('Missing value for dynamic parameter "%s".', $param->getName()));
+                }
+
+                foreach ($param->getWhere() as $condition) {
+                    $op = key($condition);
+                    $where = current($condition);
+                    if ('AND' === $op) {
+                        $qb->andWhere($where);
+                    } else {
+                        $qb->orWhere($where);
+                    }
+                }
+
+                $value = null !== $value && '' !== $value ? $value : $param->getValue();
+                $qb->setParameter($param->getName(), $value, $param->getType());
+            }
         }
 
         if ($options['order_by']) {

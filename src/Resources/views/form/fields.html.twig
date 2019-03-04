@@ -1,5 +1,8 @@
 {% block entity2_select2_widget %}
     {{ form_widget(form, { attr: attr|merge({
+        'data-entity2-options': {
+            'dynamicParams': entity2.dynamic_params,
+        }|json_encode|raw,
         'data-select2-options': {
             'ajax': {
                 'url': path('rich_form_entity2_search', { hash: entity2.query_hash }),

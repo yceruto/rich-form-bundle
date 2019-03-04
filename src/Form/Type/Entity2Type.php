@@ -15,9 +15,11 @@ use Symfony\Component\Form\FormView;
 use Symfony\Component\HttpFoundation\Session\Session;
 use Symfony\Component\HttpKernel\Kernel;
 use Symfony\Component\OptionsResolver\Exception\InvalidArgumentException;
+use Symfony\Component\OptionsResolver\Exception\InvalidOptionsException;
 use Symfony\Component\OptionsResolver\Options;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\PropertyAccess\PropertyPath;
+use Yceruto\Bundle\RichFormBundle\Doctrine\Query\DynamicParameter;
 use Yceruto\Bundle\RichFormBundle\Form\ChoiceList\Loader\Entity2LoaderDecorator;
 
 class Entity2Type extends AbstractType
@@ -58,7 +60,7 @@ class Entity2Type extends AbstractType
             'search_by' => $options['search_by'],
             'order_by' => $options['order_by'],
             'result_fields' => $options['result_fields'],
-            'group_by' => null !== $options['group_by'] && !\is_callable($options['group_by']) ? $options['group_by']: null,
+            'group_by' => $options['group_by'],
         ];
 
         if (\is_string($options['choice_label'])) {
@@ -70,13 +72,34 @@ class Entity2Type extends AbstractType
         }
 
         if (null !== $options['query_builder']) {
-            $autocompleteOptions['qb_parts'] = $this->getQueryBuilderPartsForSerialize($options['query_builder']);
+            $autocompleteOptions['qb_parts'] = $this->getSerializableQueryBuilderParts($options['query_builder']);
+        }
+
+        if ([] !== $options['dynamic_params']) {
+            $autocompleteOptions['qb_dynamic_params'] = array_values($options['dynamic_params']);
         }
 
         $queryHash = CachingFactoryDecorator::generateHash($autocompleteOptions, 'entity2_query');
         $this->session->set(self::SESSION_ID.$queryHash, $autocompleteOptions);
 
         $view->vars['entity2']['query_hash'] = $queryHash;
+    }
+
+    public function finishView(FormView $view, FormInterface $form, array $options): void
+    {
+        $dynamicParams = [];
+
+        /** @var DynamicParameter $dynamicParam */
+        foreach ($options['dynamic_params'] as $selector => $dynamicParam) {
+            if (null !== $view->parent && isset($view->parent->children[$selector]->vars['id'])) {
+                unset($dynamicParams[$selector]);
+                $selector = '#'.$view->parent->children[$selector]->vars['id'];
+            }
+
+            $dynamicParams[$selector] = $dynamicParam->getName();
+        }
+
+        $view->vars['entity2']['dynamic_params'] = $dynamicParams;
     }
 
     public function configureOptions(OptionsResolver $resolver): void
@@ -117,7 +140,7 @@ class Entity2Type extends AbstractType
                 $order = strtoupper($order);
 
                 if ('ASC' !== $order && 'DESC' !== $order) {
-                    throw new InvalidArgumentException(sprintf('Unexpected order type "%s", allowed values are "ASC" or "DESC".', $order));
+                    throw new InvalidArgumentException(sprintf('Invalid order "%s" for "order_by" option, the allowed values are "ASC" and "DESC".', $order));
                 }
 
                 $orderBy[$field] = $order;
@@ -126,17 +149,37 @@ class Entity2Type extends AbstractType
             return $orderBy;
         };
 
+        $dynamicParamsNormalizer = function (Options $options, $value) {
+            $dynamicParams = [];
+            /** @var DynamicParameter $dynamicParam */
+            foreach ((array) $value as $id => $dynamicParam) {
+                if (!\is_string($id)) {
+                    throw new InvalidArgumentException(sprintf('The option "dynamic_params" expects as key of the array a string (field name or CSS selector), %s given.', gettype($id)));
+                }
+
+                if ([] === $dynamicParam->getWhere()) {
+                    throw new InvalidOptionsException('Dynamic parameters must have a "where" statement.');
+                }
+
+                $dynamicParams[$id] = $dynamicParam;
+            }
+
+            return $dynamicParams;
+        };
+
         $resolver->setDefaults([
             'entity_manager' => null,
             'search_by' => null,
             'order_by' => null,
+            'dynamic_params' => null,
             'result_fields' => null,
             'max_results' => $this->globalOptions['max_results'] ?? 10,
         ]);
 
         $resolver->setAllowedTypes('entity_manager', ['null', 'string']);
         $resolver->setAllowedTypes('search_by', ['null', 'string', 'string[]']);
-        $resolver->setAllowedTypes('order_by', ['null', 'string', 'array']);
+        $resolver->setAllowedTypes('order_by', ['null', 'string', 'string[]']);
+        $resolver->setAllowedTypes('dynamic_params', ['null', DynamicParameter::class.'[]']);
         $resolver->setAllowedTypes('result_fields', ['null', 'string', 'string[]']);
         $resolver->setAllowedTypes('max_results', ['null', 'int']);
         $resolver->setAllowedTypes('group_by', ['null', 'string', 'Symfony\Component\PropertyAccess\PropertyPath']);
@@ -144,6 +187,7 @@ class Entity2Type extends AbstractType
         $resolver->setNormalizer('expanded', $extendedNormalizer);
         $resolver->setNormalizer('choice_loader', $choiceLoaderNormalizer);
         $resolver->setNormalizer('order_by', $orderByNormalizer);
+        $resolver->setNormalizer('dynamic_params', $dynamicParamsNormalizer);
     }
 
     public function getBlockPrefix(): string
@@ -156,7 +200,7 @@ class Entity2Type extends AbstractType
         return EntityType::class;
     }
 
-    public function getQueryBuilderPartsForSerialize(QueryBuilder $queryBuilder): array
+    public function getSerializableQueryBuilderParts(QueryBuilder $queryBuilder): array
     {
         $parameters = [];
         foreach ($queryBuilder->getParameters() as $parameter) {

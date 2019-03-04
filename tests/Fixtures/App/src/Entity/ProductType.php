@@ -7,7 +7,7 @@ use Doctrine\ORM\Mapping as ORM;
 /**
  * @ORM\Entity
  */
-class Category
+class ProductType
 {
     /**
      * @ORM\Id
@@ -22,34 +22,6 @@ class Category
      * @ORM\Column(type="string")
      */
     public $name;
-
-    /**
-     * @var string
-     *
-     * @ORM\Column(type="string")
-     */
-    public $description;
-
-    /**
-     * @var string
-     *
-     * @ORM\Column(type="string")
-     */
-    public $groupName;
-
-    /**
-     * @var bool
-     *
-     * @ORM\Column(type="boolean")
-     */
-    public $enabled = true;
-
-    /**
-     * @var ProductType
-     *
-     * @ORM\ManyToOne(targetEntity="ProductType")
-     */
-    public $type;
 
     public function getId(): ?int
     {

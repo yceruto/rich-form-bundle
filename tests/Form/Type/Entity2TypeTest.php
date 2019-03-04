@@ -19,6 +19,7 @@ use Symfony\Component\HttpFoundation\Session\Attribute\AttributeBag;
 use Symfony\Component\HttpFoundation\Session\Flash\FlashBag;
 use Symfony\Component\HttpFoundation\Session\Session;
 use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
+use Yceruto\Bundle\RichFormBundle\Doctrine\Query\DynamicParameter;
 use Yceruto\Bundle\RichFormBundle\Form\Type\Entity2Type;
 
 class Entity2TypeTest extends TypeTestCase
@@ -452,6 +453,9 @@ class Entity2TypeTest extends TypeTestCase
 
         $this->persist([$entity1, $entity2, $entity3]);
 
+        $dynamicParam = new DynamicParameter('number');
+        $dynamicParam->where('entity.phoneNumbers like :number');
+
         /** @var Entity2Type $type */
         $type = static::TESTED_TYPE;
         $view = $this->factory->createNamed('name', $type, null, [
@@ -461,9 +465,14 @@ class Entity2TypeTest extends TypeTestCase
             'query_builder' => function (EntityRepository $r) use (&$queryBuilder) {
                 return $queryBuilder = $r->createQueryBuilder('entity')->where('entity.phoneNumbers is not null');
             },
+            'dynamic_params' => [
+                '#id' => $dynamicParam,
+            ],
             'entity_manager' => 'default',
-            'max_results' => 15,
             'search_by' => ['name'],
+            'order_by' => ['name'],
+            'max_results' => 15,
+            'result_fields' => ['phoneNumbers'],
         ])->createView();
 
         $options = [
@@ -471,19 +480,91 @@ class Entity2TypeTest extends TypeTestCase
             'em' => 'default',
             'max_results' => 15,
             'search_by' => ['name'],
-            'order_by' => [],
-            'result_fields' => null,
+            'order_by' => ['name' => 'ASC'],
+            'result_fields' => ['phoneNumbers'],
             'group_by' => null,
             'text' => 'name',
             'qb_parts' => [
                 'dql_parts' => array_filter($queryBuilder->getDQLParts()),
                 'parameters' => [],
             ],
+            'qb_dynamic_params' => [$dynamicParam],
         ];
         $queryHash = CachingFactoryDecorator::generateHash($options, 'entity2_query');
 
         $this->assertSame($queryHash, $view->vars['entity2']['query_hash']);
         $this->assertTrue($this->session->has($type::SESSION_ID.$queryHash));
         $this->assertSame($options, $this->session->get($type::SESSION_ID.$queryHash));
+    }
+
+    /**
+     * @expectedException \Symfony\Component\OptionsResolver\Exception\InvalidArgumentException
+     * @expectedExceptionMessage The option "group_by" with value Closure is expected to be of type "null" or "string" or "Symfony\Component\PropertyAccess\PropertyPath", but is of type "Closure".
+     */
+    public function testGroupByCallableIsNotAllowed(): void
+    {
+        $this->factory->createNamed('name', static::TESTED_TYPE, null, [
+            'em' => 'default',
+            'class' => self::SINGLE_IDENT_CLASS,
+            'group_by' => function () {
+                return 'foo';
+            },
+        ]);
+    }
+
+    /**
+     * @expectedException \Symfony\Component\OptionsResolver\Exception\InvalidArgumentException
+     * @expectedExceptionMessage Invalid order "TYPO" for "order_by" option, the allowed values are "ASC" and "DESC".
+     */
+    public function testOrderByOptionFailsIfUnknownOrder(): void
+    {
+        $this->factory->createNamed('name', static::TESTED_TYPE, null, [
+            'em' => 'default',
+            'class' => self::SINGLE_IDENT_CLASS,
+            'order_by' => ['name' => 'typo'],
+        ]);
+    }
+
+    /**
+     * @expectedException \Symfony\Component\OptionsResolver\Exception\InvalidArgumentException
+     * @expectedExceptionMessage The option "dynamic_params" expects as key of the array a string (field name or CSS selector), integer given.
+     */
+    public function testDynamicParamsOptionFailsIfMissingKey(): void
+    {
+        $dynamicParam = new DynamicParameter('number');
+        $dynamicParam->where('entity.phoneNumbers like :number');
+
+        $this->factory->createNamed('name', static::TESTED_TYPE, null, [
+            'em' => 'default',
+            'class' => self::SINGLE_IDENT_CLASS,
+            'dynamic_params' => [$dynamicParam],
+        ]);
+    }
+
+    /**
+     * @expectedException \Symfony\Component\OptionsResolver\Exception\InvalidOptionsException
+     * @expectedExceptionMessage Dynamic parameters must have a "where" statement.
+     */
+    public function testDynamicParamsOptionFailsIfEmptyWhere(): void
+    {
+        $this->factory->createNamed('name', static::TESTED_TYPE, null, [
+            'em' => 'default',
+            'class' => self::SINGLE_IDENT_CLASS,
+            'dynamic_params' => ['#form_phone_number' => new DynamicParameter('number')],
+        ]);
+    }
+
+    public function testValidDynamicParamsOption(): void
+    {
+        $dynamicParam = new DynamicParameter('number');
+        $dynamicParam->where('entity.phoneNumbers like :number');
+
+        $view = $this->factory->createNamed('name', static::TESTED_TYPE, null, [
+            'em' => 'default',
+            'class' => self::SINGLE_IDENT_CLASS,
+            'dynamic_params' => ['#form_phone_number' => $dynamicParam],
+        ])->createView();
+
+        $this->assertSame(['#form_phone_number' => 'number'], $view->vars['entity2']['dynamic_params']);
     }
 }
