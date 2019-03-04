@@ -20,6 +20,7 @@ use Symfony\Component\HttpFoundation\Session\Session;
 use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
 use Symfony\Component\PropertyAccess\PropertyAccessor;
 use Yceruto\Bundle\RichFormBundle\Controller\Entity2SearchAction;
+use Yceruto\Bundle\RichFormBundle\Doctrine\Query\DynamicParameter;
 use Yceruto\Bundle\RichFormBundle\Form\Type\Entity2Type;
 use Yceruto\Bundle\RichFormBundle\Tests\Fixtures\Entity\EmbeddedEntity;
 
@@ -535,5 +536,123 @@ class Entity2SearchActionTest extends TestCase
         $response = $this->controller->__invoke($request, 'hash');
 
         $this->assertSame('{"results":[],"has_next_page":false}', $response->getContent());
+    }
+
+    public function testDynamicParam(): void
+    {
+        $entity1 = new GroupableEntity(1, 'Foo', 'A');
+        $entity2 = new GroupableEntity(2, 'Bar', 'B');
+        $entity3 = new GroupableEntity(3, 'Baz', 'C');
+
+        $this->persist([$entity1, $entity2, $entity3]);
+
+        $request = Request::create('/rich-form/entity2/search?dyn[group]=B');
+        $request->setSession($this->session);
+        $this->session->set(Entity2Type::SESSION_ID.'hash', [
+            'em' => 'default',
+            'max_results' => 10,
+            'search_by' => 'name',
+            'order_by' => ['name' => 'DESC'],
+            'result_fields' => null,
+            'group_by' => null,
+            'class' => self::ITEM_GROUP_CLASS,
+            'text' => 'name',
+            'qb_dynamic_params' => [
+                (new DynamicParameter('group'))->where('entity.groupName = :group'),
+            ],
+        ]);
+
+        $response = $this->controller->__invoke($request, 'hash');
+        $this->assertInstanceOf(JsonResponse::class, $response);
+        $this->assertSame('{"results":[{"id":2,"text":"Bar"}],"has_next_page":false}', $response->getContent());
+    }
+
+    public function testIgnoreOptionalDynamicParamWithoutDefault(): void
+    {
+        $entity1 = new GroupableEntity(1, 'Foo', 'A');
+        $entity2 = new GroupableEntity(2, 'Bar', 'B');
+        $entity3 = new GroupableEntity(3, 'Baz', 'C');
+
+        $this->persist([$entity1, $entity2, $entity3]);
+
+        $request = Request::create('/rich-form/entity2/search');
+        $request->setSession($this->session);
+        $this->session->set(Entity2Type::SESSION_ID.'hash', [
+            'em' => 'default',
+            'max_results' => 10,
+            'search_by' => 'name',
+            'order_by' => ['name' => 'DESC'],
+            'result_fields' => null,
+            'group_by' => null,
+            'class' => self::ITEM_GROUP_CLASS,
+            'text' => 'name',
+            'qb_dynamic_params' => [
+                (new DynamicParameter('group'))->where('entity.groupName = :group')->optional(true),
+            ],
+        ]);
+
+        $response = $this->controller->__invoke($request, 'hash');
+        $this->assertInstanceOf(JsonResponse::class, $response);
+        $this->assertSame('{"results":[{"id":1,"text":"Foo"},{"id":3,"text":"Baz"},{"id":2,"text":"Bar"}],"has_next_page":false}', $response->getContent());
+    }
+
+    public function testDynamicParamMissingValueWithDefault(): void
+    {
+        $entity1 = new GroupableEntity(1, 'Foo', 'A');
+        $entity2 = new GroupableEntity(2, 'Bar', 'B');
+        $entity3 = new GroupableEntity(3, 'Baz', 'C');
+
+        $this->persist([$entity1, $entity2, $entity3]);
+
+        $request = Request::create('/rich-form/entity2/search');
+        $request->setSession($this->session);
+        $this->session->set(Entity2Type::SESSION_ID.'hash', [
+            'em' => 'default',
+            'max_results' => 10,
+            'search_by' => 'name',
+            'order_by' => ['name' => 'DESC'],
+            'result_fields' => null,
+            'group_by' => null,
+            'class' => self::ITEM_GROUP_CLASS,
+            'text' => 'name',
+            'qb_dynamic_params' => [
+                (new DynamicParameter('group', 'C'))->where('entity.groupName = :group')->optional(true),
+            ],
+        ]);
+
+        $response = $this->controller->__invoke($request, 'hash');
+        $this->assertInstanceOf(JsonResponse::class, $response);
+        $this->assertSame('{"results":[{"id":3,"text":"Baz"}],"has_next_page":false}', $response->getContent());
+    }
+
+    /**
+     * @expectedException \RuntimeException
+     * @expectedExceptionMessage Missing value for dynamic parameter "group".
+     */
+    public function testFailsWithMissingMandatoryDynamicParam(): void
+    {
+        $entity1 = new GroupableEntity(1, 'Foo', 'A');
+        $entity2 = new GroupableEntity(2, 'Bar', 'B');
+        $entity3 = new GroupableEntity(3, 'Baz', 'C');
+
+        $this->persist([$entity1, $entity2, $entity3]);
+
+        $request = Request::create('/rich-form/entity2/search');
+        $request->setSession($this->session);
+        $this->session->set(Entity2Type::SESSION_ID.'hash', [
+            'em' => 'default',
+            'max_results' => 10,
+            'search_by' => 'name',
+            'order_by' => ['name' => 'DESC'],
+            'result_fields' => null,
+            'group_by' => null,
+            'class' => self::ITEM_GROUP_CLASS,
+            'text' => 'name',
+            'qb_dynamic_params' => [
+                (new DynamicParameter('group'))->where('entity.groupName = :group')->optional(false),
+            ],
+        ]);
+
+        $this->controller->__invoke($request, 'hash');
     }
 }

@@ -159,11 +159,13 @@ class Entity2SearchAction
                 $value = $options['dynamic_params_values'][$param->getName()] ?? null;
 
                 if (null === $value || '' === $value) {
-                    if ($param->isOptional() && null === $param->getValue()) {
-                        continue;
+                    if (!$param->isOptional()) {
+                        throw new \RuntimeException(sprintf('Missing value for dynamic parameter "%s".', $param->getName()));
                     }
 
-                    throw new \RuntimeException(sprintf('Missing value for dynamic parameter "%s".', $param->getName()));
+                    if (null === $param->getValue()) {
+                        continue;
+                    }
                 }
 
                 foreach ($param->getWhere() as $condition) {
