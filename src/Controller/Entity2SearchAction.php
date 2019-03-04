@@ -218,17 +218,15 @@ class Entity2SearchAction
                 'text' => (string) ($options['text'] ? $this->propertyAccessor->getValue($entity, $options['text']) : $entity),
             ];
 
-            if (null !== $options['result_fields']) {
-                foreach ((array) $options['result_fields'] as $fieldName => $fieldValuePath) {
-                    $value = $this->propertyAccessor->getValue($entity, $fieldValuePath);
+            foreach ((array) $options['result_fields'] as $fieldName => $fieldValuePath) {
+                $value = $this->propertyAccessor->getValue($entity, $fieldValuePath);
 
-                    if (\is_object($value)) {
-                        $value = (string) $value;
-                    }
-
-                    $resultFieldName = \is_int($fieldName) ? $fieldValuePath : $fieldName;
-                    $elem['data'][$resultFieldName] = $value;
+                if (\is_object($value)) {
+                    $value = (string) $value;
                 }
+
+                $resultFieldName = \is_int($fieldName) ? $fieldValuePath : $fieldName;
+                $elem['data'][$resultFieldName] = $value;
             }
 
             if (null !== $options['group_by']) {
