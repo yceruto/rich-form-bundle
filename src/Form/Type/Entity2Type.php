@@ -87,7 +87,6 @@ class Entity2Type extends AbstractType
 
     public function finishView(FormView $view, FormInterface $form, array $options): void
     {
-        //
         $dynamicParams = [];
         /** @var DynamicParameter $dynamicParam */
         foreach ($options['dynamic_params'] as $selector => $dynamicParam) {

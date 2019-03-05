@@ -44,10 +44,14 @@
             };
         };
 
-        select2Options.placeholder = {
-            'id': '',
-            'text': select2Options.placeholder,
-        };
+        if (null === select2Options.placeholder) {
+            delete select2Options.placeholder;
+        } else if (typeof select2Options.placeholder === 'string') {
+            select2Options.placeholder = {
+                'id': '',
+                'text': select2Options.placeholder,
+            };
+        }
 
         if (select2Options.escapeMarkup) {
             select2Options.escapeMarkup = function (markup) { return markup; };

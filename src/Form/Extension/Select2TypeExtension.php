@@ -26,12 +26,19 @@ class Select2TypeExtension extends AbstractTypeExtension
 
     public function buildView(FormView $view, FormInterface $form, array $options): void
     {
+        // Normalize placeholder
+        if (null !== $options['select2_options']['placeholder']['text']) {
+            $options['select2_options']['placeholder']['id'] = '';
+        } else {
+            $options['select2_options']['placeholder'] = null;
+        }
+
         $view->vars['select2']['options'] = $options['select2_options'];
     }
 
     public function finishView(FormView $view, FormInterface $form, array $options): void
     {
-        // <option> attr with selected data
+        // Setting <option> attr with selected data
         if ($view->vars['choices'] && $options['result_fields'] && $options['select2_options']['selection_template']) {
             $this->preselectData($view->vars['choices'], (array) $options['result_fields']);
         }
@@ -58,6 +65,14 @@ class Select2TypeExtension extends AbstractTypeExtension
                     'template' => null,
                     'result_template' => $defaultTemplate,
                     'selection_template' => $defaultTemplate,
+                    'placeholder' => function (OptionsResolver $resolver) use ($parent) {
+                        $resolver->setDefined(['data']);
+                        $resolver->setDefaults([
+                            'text' => $parent['placeholder'],
+                        ]);
+                        $resolver->setAllowedTypes('text', ['null', 'string']);
+                        $resolver->setAllowedTypes('data', ['null', 'array']);
+                    },
                     'ajax' => function (OptionsResolver $resolver) {
                         $resolver->setDefaults([
                             'delay' => $this->globalOptions['ajax_delay'] ?? 250,
