@@ -31,7 +31,7 @@
                 }
             }
 
-            return { 'query': params.term, 'page': params.page, 'dyn': dynamicParamValues };
+            return { 'term': params.term, 'page': params.page, 'dyn': dynamicParamValues };
         };
 
         // to indicate that infinite scrolling can be used

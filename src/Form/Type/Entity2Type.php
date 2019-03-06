@@ -21,11 +21,10 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\PropertyAccess\PropertyPath;
 use Yceruto\Bundle\RichFormBundle\Doctrine\Query\DynamicParameter;
 use Yceruto\Bundle\RichFormBundle\Form\ChoiceList\Loader\Entity2LoaderDecorator;
+use Yceruto\Bundle\RichFormBundle\Request\SearchRequest;
 
 class Entity2Type extends AbstractType
 {
-    public const SESSION_ID = 'richform.entity2.';
-
     private $session;
     private $globalOptions;
 
@@ -80,7 +79,7 @@ class Entity2Type extends AbstractType
         }
 
         $queryHash = CachingFactoryDecorator::generateHash($autocompleteOptions, 'entity2_query');
-        $this->session->set(self::SESSION_ID.$queryHash, $autocompleteOptions);
+        $this->session->set(SearchRequest::SESSION_ID.$queryHash, $autocompleteOptions);
 
         $view->vars['entity2']['query_hash'] = $queryHash;
     }

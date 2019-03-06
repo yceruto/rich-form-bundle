@@ -21,7 +21,7 @@ use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
 use Symfony\Component\PropertyAccess\PropertyAccessor;
 use Yceruto\Bundle\RichFormBundle\Controller\Entity2SearchAction;
 use Yceruto\Bundle\RichFormBundle\Doctrine\Query\DynamicParameter;
-use Yceruto\Bundle\RichFormBundle\Form\Type\Entity2Type;
+use Yceruto\Bundle\RichFormBundle\Request\SearchRequest;
 use Yceruto\Bundle\RichFormBundle\Tests\Fixtures\Entity\EmbeddedEntity;
 
 class Entity2SearchActionTest extends TestCase
@@ -60,7 +60,7 @@ class Entity2SearchActionTest extends TestCase
         $this->em = DoctrineTestHelper::createTestEntityManager();
         $this->registry = $this->createRegistryMock('default', $this->em);
         $this->session = new Session(new MockArraySessionStorage(), new AttributeBag(), new FlashBag());
-        $this->session->set(Entity2Type::SESSION_ID.'hash', [
+        $this->session->set(SearchRequest::SESSION_ID.'hash', [
             'em' => 'default',
             'max_results' => 10,
             'search_by' => null,
@@ -127,12 +127,11 @@ class Entity2SearchActionTest extends TestCase
 
     /**
      * @expectedException \RuntimeException
-     * @expectedExceptionMessage Missing hash value.
+     * @expectedExceptionMessage Missing hash.
      */
     public function testMissingHash(): void
     {
-        $request = Request::create('/rich-form/entity2/search?query=foo');
-
+        $request = Request::create('/rich-form/entity2/search?term=foo');
         $this->controller->__invoke($request);
     }
 
@@ -142,10 +141,11 @@ class Entity2SearchActionTest extends TestCase
      */
     public function testMissingSession(): void
     {
-        $request = Request::create('/rich-form/entity2/search?query=foo');
+        $request = Request::create('/rich-form/entity2/{hash}/search?term=foo');
+        $request->attributes->set('hash', 'hash');
         $this->session = null;
 
-        $this->controller->__invoke($request, 'hash');
+        $this->controller->__invoke($request);
     }
 
     /**
@@ -154,7 +154,8 @@ class Entity2SearchActionTest extends TestCase
      */
     public function testMissingOptions(): void
     {
-        $request = Request::create('/rich-form/entity2/search?query=foo');
+        $request = Request::create('/rich-form/entity2/{hash}/search?term=foo');
+        $request->attributes->set('hash', 'hash');
         $this->session->clear();
         $request->setSession($this->session);
 
@@ -163,10 +164,11 @@ class Entity2SearchActionTest extends TestCase
 
     public function testEmptyResultsIfEmptyDatabase(): void
     {
-        $request = Request::create('/rich-form/entity2/search?query=foo');
+        $request = Request::create('/rich-form/entity2/{hash}/search?term=foo');
+        $request->attributes->set('hash', 'hash');
         $request->setSession($this->session);
 
-        $response = $this->controller->__invoke($request, 'hash');
+        $response = $this->controller->__invoke($request);
         $this->assertInstanceOf(JsonResponse::class, $response);
         $this->assertSame('{"results":[],"has_next_page":false}', $response->getContent());
     }
@@ -178,7 +180,8 @@ class Entity2SearchActionTest extends TestCase
 
         $this->persist([$entity1, $entity2]);
 
-        $request = Request::create('/rich-form/entity2/search');
+        $request = Request::create('/rich-form/entity2/{hash}/search');
+        $request->attributes->set('hash', 'hash');
         $request->setSession($this->session);
 
         $response = $this->controller->__invoke($request, 'hash');
@@ -194,7 +197,8 @@ class Entity2SearchActionTest extends TestCase
 
         $this->persist([$entity1, $entity2]);
 
-        $request = Request::create('/rich-form/entity2/search?query=foo');
+        $request = Request::create('/rich-form/entity2/{hash}/search?term=foo');
+        $request->attributes->set('hash', 'hash');
         $request->setSession($this->session);
 
         $response = $this->controller->__invoke($request, 'hash');
@@ -209,7 +213,8 @@ class Entity2SearchActionTest extends TestCase
 
         $this->persist([$entity1, $entity2]);
 
-        $request = Request::create('/rich-form/entity2/search?query=baz');
+        $request = Request::create('/rich-form/entity2/{hash}/search?term=baz');
+        $request->attributes->set('hash', 'hash');
         $request->setSession($this->session);
 
         $response = $this->controller->__invoke($request, 'hash');
@@ -225,9 +230,10 @@ class Entity2SearchActionTest extends TestCase
 
         $this->persist([$entity1, $entity2]);
 
-        $request = Request::create('/rich-form/entity2/search?query=789');
+        $request = Request::create('/rich-form/entity2/{hash}/search?term=789');
+        $request->attributes->set('hash', 'hash');
         $request->setSession($this->session);
-        $this->session->set(Entity2Type::SESSION_ID.'hash', [
+        $this->session->set(SearchRequest::SESSION_ID.'hash', [
             'em' => 'default',
             'max_results' => 10,
             'search_by' => 'phoneNumbers',
@@ -252,9 +258,10 @@ class Entity2SearchActionTest extends TestCase
 
         $this->persist([$entity1->single, $entity1, $entity2->single, $entity2]);
 
-        $request = Request::create('/rich-form/entity2/search?query=bar');
+        $request = Request::create('/rich-form/entity2/{hash}/search?term=bar');
+        $request->attributes->set('hash', 'hash');
         $request->setSession($this->session);
-        $this->session->set(Entity2Type::SESSION_ID.'hash', [
+        $this->session->set(SearchRequest::SESSION_ID.'hash', [
             'em' => 'default',
             'max_results' => 10,
             'search_by' => 'single',
@@ -279,9 +286,10 @@ class Entity2SearchActionTest extends TestCase
 
         $this->persist([$entity1->single, $entity1, $entity2->single, $entity2]);
 
-        $request = Request::create('/rich-form/entity2/search?query=bar');
+        $request = Request::create('/rich-form/entity2/{hash}/search?term=bar');
+        $request->attributes->set('hash', 'hash');
         $request->setSession($this->session);
-        $this->session->set(Entity2Type::SESSION_ID.'hash', [
+        $this->session->set(SearchRequest::SESSION_ID.'hash', [
             'em' => 'default',
             'max_results' => 10,
             'search_by' => 'single.name',
@@ -306,9 +314,10 @@ class Entity2SearchActionTest extends TestCase
 
         $this->persist([$entity1, $entity2]);
 
-        $request = Request::create('/rich-form/entity2/search?query=321');
+        $request = Request::create('/rich-form/entity2/{hash}/search?term=321');
+        $request->attributes->set('hash', 'hash');
         $request->setSession($this->session);
-        $this->session->set(Entity2Type::SESSION_ID.'hash', [
+        $this->session->set(SearchRequest::SESSION_ID.'hash', [
             'em' => 'default',
             'max_results' => 10,
             'search_by' => 'contact.phone',
@@ -333,9 +342,10 @@ class Entity2SearchActionTest extends TestCase
 
         $this->persist([$entity1, $entity2]);
 
-        $request = Request::create('/rich-form/entity2/search?query=321');
+        $request = Request::create('/rich-form/entity2/{hash}/search?term=321');
+        $request->attributes->set('hash', 'hash');
         $request->setSession($this->session);
-        $this->session->set(Entity2Type::SESSION_ID.'hash', [
+        $this->session->set(SearchRequest::SESSION_ID.'hash', [
             'em' => 'default',
             'max_results' => 10,
             'search_by' => 'contact.phone',
@@ -363,9 +373,10 @@ class Entity2SearchActionTest extends TestCase
 
         $this->persist([$entity1, $entity2]);
 
-        $request = Request::create('/rich-form/entity2/search?query=foo');
+        $request = Request::create('/rich-form/entity2/{hash}/search?term=foo');
+        $request->attributes->set('hash', 'hash');
         $request->setSession($this->session);
-        $this->session->set(Entity2Type::SESSION_ID.'hash', [
+        $this->session->set(SearchRequest::SESSION_ID.'hash', [
             'em' => 'default',
             'max_results' => 10,
             'search_by' => null,
@@ -389,9 +400,10 @@ class Entity2SearchActionTest extends TestCase
 
         $this->persist([$entity1, $entity2, $entity3]);
 
-        $request = Request::create('/rich-form/entity2/search');
+        $request = Request::create('/rich-form/entity2/{hash}/search');
+        $request->attributes->set('hash', 'hash');
         $request->setSession($this->session);
-        $this->session->set(Entity2Type::SESSION_ID.'hash', [
+        $this->session->set(SearchRequest::SESSION_ID.'hash', [
             'em' => 'default',
             'max_results' => 10,
             'search_by' => null,
@@ -415,9 +427,10 @@ class Entity2SearchActionTest extends TestCase
 
         $this->persist([$entity1, $entity2, $entity3]);
 
-        $request = Request::create('/rich-form/entity2/search');
+        $request = Request::create('/rich-form/entity2/{hash}/search');
+        $request->attributes->set('hash', 'hash');
         $request->setSession($this->session);
-        $this->session->set(Entity2Type::SESSION_ID.'hash', [
+        $this->session->set(SearchRequest::SESSION_ID.'hash', [
             'em' => 'default',
             'max_results' => 10,
             'search_by' => null,
@@ -440,9 +453,10 @@ class Entity2SearchActionTest extends TestCase
 
         $this->persist([$entity1, $entity2, $entity3, $entity4]);
 
-        $request = Request::create('/rich-form/entity2/search');
+        $request = Request::create('/rich-form/entity2/{hash}/search');
+        $request->attributes->set('hash', 'hash');
         $request->setSession($this->session);
-        $this->session->set(Entity2Type::SESSION_ID.'hash', [
+        $this->session->set(SearchRequest::SESSION_ID.'hash', [
             'em' => 'default',
             'max_results' => 10,
             'search_by' => null,
@@ -472,9 +486,10 @@ class Entity2SearchActionTest extends TestCase
             ->setParameter('group_name', 'B')
         ;
 
-        $request = Request::create('/rich-form/entity2/search?query=foo');
+        $request = Request::create('/rich-form/entity2/{hash}/search?term=foo');
+        $request->attributes->set('hash', 'hash');
         $request->setSession($this->session);
-        $this->session->set(Entity2Type::SESSION_ID.'hash', [
+        $this->session->set(SearchRequest::SESSION_ID.'hash', [
             'em' => 'default',
             'max_results' => 10,
             'search_by' => null,
@@ -512,26 +527,29 @@ class Entity2SearchActionTest extends TestCase
             'text' => null,
         ];
 
-        $request = Request::create('/rich-form/entity2/search?query=foo&page=1');
+        $request = Request::create('/rich-form/entity2/{hash}/search?term=foo&page=1');
+        $request->attributes->set('hash', 'hash');
         $request->setSession($this->session);
-        $this->session->set(Entity2Type::SESSION_ID.'hash', $options);
+        $this->session->set(SearchRequest::SESSION_ID.'hash', $options);
 
         $response = $this->controller->__invoke($request, 'hash');
 
         $this->assertInstanceOf(JsonResponse::class, $response);
         $this->assertSame('{"results":[{"id":1,"text":"Foo"}],"has_next_page":true}', $response->getContent());
 
-        $request = Request::create('/rich-form/entity2/search?query=foo&page=2');
+        $request = Request::create('/rich-form/entity2/{hash}/search?term=foo&page=2');
+        $request->attributes->set('hash', 'hash');
         $request->setSession($this->session);
-        $this->session->set(Entity2Type::SESSION_ID.'hash', $options);
+        $this->session->set(SearchRequest::SESSION_ID.'hash', $options);
 
         $response = $this->controller->__invoke($request, 'hash');
 
         $this->assertSame('{"results":[{"id":2,"text":"Foobar"}],"has_next_page":true}', $response->getContent());
 
-        $request = Request::create('/rich-form/entity2/search?query=foo&page=3');
+        $request = Request::create('/rich-form/entity2/{hash}/search?term=foo&page=3');
+        $request->attributes->set('hash', 'hash');
         $request->setSession($this->session);
-        $this->session->set(Entity2Type::SESSION_ID.'hash', $options);
+        $this->session->set(SearchRequest::SESSION_ID.'hash', $options);
 
         $response = $this->controller->__invoke($request, 'hash');
 
@@ -546,9 +564,10 @@ class Entity2SearchActionTest extends TestCase
 
         $this->persist([$entity1, $entity2, $entity3]);
 
-        $request = Request::create('/rich-form/entity2/search?dyn[group]=B');
+        $request = Request::create('/rich-form/entity2/{hash}/search?dyn[group]=B');
+        $request->attributes->set('hash', 'hash');
         $request->setSession($this->session);
-        $this->session->set(Entity2Type::SESSION_ID.'hash', [
+        $this->session->set(SearchRequest::SESSION_ID.'hash', [
             'em' => 'default',
             'max_results' => 10,
             'search_by' => 'name',
@@ -575,9 +594,10 @@ class Entity2SearchActionTest extends TestCase
 
         $this->persist([$entity1, $entity2, $entity3]);
 
-        $request = Request::create('/rich-form/entity2/search?dyn[group]=');
+        $request = Request::create('/rich-form/entity2/{hash}/search?dyn[group]=');
+        $request->attributes->set('hash', 'hash');
         $request->setSession($this->session);
-        $this->session->set(Entity2Type::SESSION_ID.'hash', [
+        $this->session->set(SearchRequest::SESSION_ID.'hash', [
             'em' => 'default',
             'max_results' => 10,
             'search_by' => 'name',
@@ -604,9 +624,10 @@ class Entity2SearchActionTest extends TestCase
 
         $this->persist([$entity1, $entity2, $entity3]);
 
-        $request = Request::create('/rich-form/entity2/search?dyn[group]=');
+        $request = Request::create('/rich-form/entity2/{hash}/search?dyn[group]=');
+        $request->attributes->set('hash', 'hash');
         $request->setSession($this->session);
-        $this->session->set(Entity2Type::SESSION_ID.'hash', [
+        $this->session->set(SearchRequest::SESSION_ID.'hash', [
             'em' => 'default',
             'max_results' => 10,
             'search_by' => 'name',
@@ -637,9 +658,10 @@ class Entity2SearchActionTest extends TestCase
 
         $this->persist([$entity1, $entity2, $entity3]);
 
-        $request = Request::create('/rich-form/entity2/search');
+        $request = Request::create('/rich-form/entity2/{hash}/search');
+        $request->attributes->set('hash', 'hash');
         $request->setSession($this->session);
-        $this->session->set(Entity2Type::SESSION_ID.'hash', [
+        $this->session->set(SearchRequest::SESSION_ID.'hash', [
             'em' => 'default',
             'max_results' => 10,
             'search_by' => 'name',

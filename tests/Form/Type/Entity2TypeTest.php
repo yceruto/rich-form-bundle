@@ -22,6 +22,7 @@ use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
 use Yceruto\Bundle\RichFormBundle\Doctrine\Query\DynamicParameter;
 use Yceruto\Bundle\RichFormBundle\Form\Extension\Select2TypeExtension;
 use Yceruto\Bundle\RichFormBundle\Form\Type\Entity2Type;
+use Yceruto\Bundle\RichFormBundle\Request\SearchRequest;
 
 class Entity2TypeTest extends TypeTestCase
 {
@@ -525,8 +526,8 @@ class Entity2TypeTest extends TypeTestCase
         $queryHash = CachingFactoryDecorator::generateHash($options, 'entity2_query');
 
         $this->assertSame($queryHash, $view->vars['entity2']['query_hash']);
-        $this->assertTrue($this->session->has($type::SESSION_ID.$queryHash));
-        $this->assertSame($options, $this->session->get($type::SESSION_ID.$queryHash));
+        $this->assertTrue($this->session->has(SearchRequest::SESSION_ID.$queryHash));
+        $this->assertSame($options, $this->session->get(SearchRequest::SESSION_ID.$queryHash));
     }
 
     /**
