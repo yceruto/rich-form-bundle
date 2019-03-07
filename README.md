@@ -47,6 +47,8 @@ twig:
 
 **Assets**
 
+This bundle doesn't provide any version of the Select2 plugin.
+
 ```html
 <!doctype html>
 <html>
@@ -54,8 +56,8 @@ twig:
         <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/css/select2.min.css" rel="stylesheet" />
 
         <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/js/select2.min.js"></script>
-        <script src="{{ asset('bundles/richform/richform.js') }}"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/js/select2.full.min.js"></script>
+        <script src="{{ asset('bundles/richform/entity2.js') }}"></script>
     </head>
 ```
 
@@ -68,8 +70,8 @@ $formBuilder->add('category', Entity2Type::class, [
 ```
 
 The `Entity2Type` extends from the built-in `EntityType` by adding the most awesome Select2 features: 
-search via Ajax, pagination, custom result templates, etc, all of them combined with the `EntityType`
-options like `query_builder` and the new autocomplete options: `search_fields`, `result_fields` and `max_results`.
+search via Ajax, pagination and custom result templates. All of them combined with the `EntityType`
+options like `query_builder` and new options like `search_by`, `order_by`, `max_results` and more.
 
 License
 -------
