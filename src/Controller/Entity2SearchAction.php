@@ -27,32 +27,26 @@ class Entity2SearchAction
     public function __invoke(Request $request)
     {
         $searchRequest = new SearchRequest($request);
+        $searchOptions = $searchRequest->getOptions();
 
-        if (null !== $name = $searchRequest->getOptions()->getEntityManagerName()) {
+        if (null !== $name = $searchOptions->getEntityManagerName()) {
             $em = $this->registry->getManager($name);
         } else {
-            $em = $this->registry->getManagerForClass($searchRequest->getOptions()->getEntityClass());
+            $em = $this->registry->getManagerForClass($searchOptions->getEntityClass());
 
             if (null === $em) {
-                throw new \RuntimeException(sprintf('Class "%s" seems not to be a managed Doctrine entity. Did you forget to map it?', $searchRequest->getOptions()->getEntityClass()));
+                throw new \RuntimeException(sprintf('Class "%s" seems not to be a managed Doctrine entity. Did you forget to map it?', $searchOptions->getEntityClass()));
             }
         }
 
         /** @var EntityManagerInterface $em */
         $qb = $this->createSearchQueryBuilder($em, $searchRequest);
-        $results = $this->createResults($qb, $searchRequest, $count);
+        $results = $this->createResults($qb, $searchRequest);
 
-        return new JsonResponse([
-            'results' => $results,
-            // For better performance we don't calculate the total records
-            // through a database query, instead we do an extra HTTP request
-            // (only if the total records is multiple of max_results)
-            // then empty results and has_next_page will be "false"
-            'has_next_page' => $count > 0 && $count === $searchRequest->getOptions()->getMaxResults(),
-        ]);
+        return new JsonResponse($results);
     }
 
-    private function createResults(QueryBuilder $qb, SearchRequest $request, ?int &$count): array
+    private function createResults(QueryBuilder $qb, SearchRequest $request): array
     {
         $options = $request->getOptions();
         $paginator = $this->createPaginator($qb, $request->getPage(), $options);
@@ -91,6 +85,13 @@ class Entity2SearchAction
             }
         }
 
-        return array_values($results);
+        return [
+            'results' => array_values($results),
+            // For better performance we don't calculate the total records
+            // through a database query, instead we do an extra HTTP request
+            // (only if the total records is multiple of max_results)
+            // then empty results and has_next_page will be "false"
+            'has_next_page' => $count > 0 && $count === $options->getMaxResults(),
+        ];
     }
 }
