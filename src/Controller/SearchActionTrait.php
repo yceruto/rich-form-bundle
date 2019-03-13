@@ -188,7 +188,7 @@ trait SearchActionTrait
                     $qb->leftJoin($alias.'.'.$firstFieldName, $fieldAlias .= '1');
                 }
 
-                yield from $this->getField($fieldAlias, $secondFieldName, $classMetadata->getAssociationTargetClass($firstFieldName), $qb, $em);
+                yield from $this->getField($fieldAlias, $secondFieldName, $classMetadata->getAssociationTargetClass($firstFieldName), $qb, $em, $allowAssoc);
             }
         }
 
