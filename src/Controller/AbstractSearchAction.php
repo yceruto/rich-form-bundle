@@ -2,15 +2,50 @@
 
 namespace Yceruto\Bundle\RichFormBundle\Controller;
 
+use Doctrine\Common\Persistence\ManagerRegistry;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\ORM\Tools\Pagination\Paginator;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Yceruto\Bundle\RichFormBundle\Request\SearchOptions;
 use Yceruto\Bundle\RichFormBundle\Request\SearchRequest;
 
-trait SearchActionTrait
+abstract class AbstractSearchAction
 {
+    private $registry;
+
+    public function __construct(ManagerRegistry $registry)
+    {
+        $this->registry = $registry;
+    }
+
+    public function __invoke(Request $request)
+    {
+        $searchRequest = new SearchRequest($request);
+        $searchOptions = $searchRequest->getOptions();
+
+        if (null !== $name = $searchOptions->getEntityManagerName()) {
+            $em = $this->registry->getManager($name);
+        } else {
+            $em = $this->registry->getManagerForClass($searchOptions->getEntityClass());
+
+            if (null === $em) {
+                throw new \RuntimeException(sprintf('Class "%s" seems not to be a managed Doctrine entity. Did you forget to map it?', $searchOptions->getEntityClass()));
+            }
+        }
+
+        /** @var EntityManagerInterface $em */
+        $qb = $this->createSearchQueryBuilder($em, $searchRequest);
+        $paginator = $this->createPaginator($qb, $searchRequest->getPage(), $searchOptions);
+        $results = $this->createResults($paginator, $searchOptions);
+
+        return new JsonResponse($results);
+    }
+
+    abstract protected function createResults(Paginator $paginator, SearchOptions $options): array;
+
     private function createPaginator(QueryBuilder $qb, int $page, SearchOptions $options): Paginator
     {
         $maxResults = $options->getMaxResults();

@@ -3,58 +3,28 @@
 namespace Yceruto\Bundle\RichFormBundle\Controller;
 
 use Doctrine\Common\Persistence\ManagerRegistry;
-use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\ORM\QueryBuilder;
+use Doctrine\ORM\Tools\Pagination\Paginator;
 use Symfony\Bridge\Doctrine\Form\ChoiceList\IdReader;
-use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
-use Yceruto\Bundle\RichFormBundle\Request\SearchRequest;
+use Yceruto\Bundle\RichFormBundle\Request\SearchOptions;
 
-class Entity2SearchAction
+class Entity2SearchAction extends AbstractSearchAction
 {
-    use SearchActionTrait;
-
-    private $registry;
     private $propertyAccessor;
 
     public function __construct(ManagerRegistry $registry, PropertyAccessorInterface $propertyAccessor)
     {
-        $this->registry = $registry;
+        parent::__construct($registry);
+
         $this->propertyAccessor = $propertyAccessor;
     }
 
-    public function __invoke(Request $request)
+    protected function createResults(Paginator $paginator, SearchOptions $options): array
     {
-        $searchRequest = new SearchRequest($request);
-        $searchOptions = $searchRequest->getOptions();
-
-        if (null !== $name = $searchOptions->getEntityManagerName()) {
-            $em = $this->registry->getManager($name);
-        } else {
-            $em = $this->registry->getManagerForClass($searchOptions->getEntityClass());
-
-            if (null === $em) {
-                throw new \RuntimeException(sprintf('Class "%s" seems not to be a managed Doctrine entity. Did you forget to map it?', $searchOptions->getEntityClass()));
-            }
-        }
-
-        /** @var EntityManagerInterface $em */
-        $qb = $this->createSearchQueryBuilder($em, $searchRequest);
-        $results = $this->createResults($qb, $searchRequest);
-
-        return new JsonResponse($results);
-    }
-
-    private function createResults(QueryBuilder $qb, SearchRequest $request): array
-    {
-        $options = $request->getOptions();
-        $paginator = $this->createPaginator($qb, $request->getPage(), $options);
-
         $count = 0;
         $results = [];
         $text = $options->getText();
-        $em = $qb->getEntityManager();
+        $em = $paginator->getQuery()->getEntityManager();
         $classMetadata = $em->getClassMetadata($options->getEntityClass());
         $idReader = new IdReader($em, $classMetadata);
         foreach ($paginator as $entity) {
@@ -88,8 +58,8 @@ class Entity2SearchAction
         return [
             'results' => array_values($results),
             // For better performance we don't calculate the total records
-            // through a database query, instead we do an extra HTTP request
-            // (only if the total records is multiple of max_results)
+            // through a database query, instead we wait for an extra request
+            // (this will only happen if the total records is multiple of max_results)
             // then empty results and has_next_page will be "false"
             'has_next_page' => $count > 0 && $count === $options->getMaxResults(),
         ];
