@@ -2,6 +2,7 @@
 
 namespace Yceruto\Bundle\RichFormBundle\Form\Type;
 
+use Doctrine\ORM\Query\Parameter;
 use Doctrine\ORM\QueryBuilder;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
@@ -200,15 +201,16 @@ class Entity2Type extends AbstractType
     protected function getSerializableQueryBuilderParts(QueryBuilder $queryBuilder): array
     {
         $parameters = [];
+        /** @var Parameter $parameter */
         foreach ($queryBuilder->getParameters() as $parameter) {
             $value = $parameter->getValue();
             if (\is_object($value)) {
-                throw new InvalidArgumentException('The parameter value must be scalar, object given.');
+                throw new InvalidArgumentException(sprintf('The parameter "%s" with value instance of "%s" must be scalar, object given.', $parameter->getName(), \get_class($value)));
             }
             if (\is_array($value)) {
-                array_walk_recursive($value, function ($v) {
+                array_walk_recursive($value, function ($v) use ($parameter) {
                     if (\is_object($v)) {
-                        throw new InvalidArgumentException('The parameter value must be scalar, object given.');
+                        throw new InvalidArgumentException(sprintf('The parameter "%s" with value instance of "%s" must be scalar, object given.', $parameter->getName(), \get_class($v)));
                     }
                 });
             }

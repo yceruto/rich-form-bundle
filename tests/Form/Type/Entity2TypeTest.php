@@ -478,6 +478,21 @@ class Entity2TypeTest extends TypeTestCase
         ]);
     }
 
+    /**
+     * @expectedException \Symfony\Component\OptionsResolver\Exception\InvalidArgumentException
+     * @expectedExceptionMessage The parameter "entity" with value instance of "stdClass" must be scalar, object given.
+     */
+    public function testFailsIfQueryParameterValueIsNotScalar(): void
+    {
+        $this->factory->createNamed('name', static::TESTED_TYPE, null, [
+            'em' => 'default',
+            'class' => self::ITEM_GROUP_CLASS,
+            'query_builder' => function (EntityRepository $r) {
+                return $r->createQueryBuilder('entity')->where('entity = :entity')->setParameter('entity', new \stdClass());
+            },
+        ])->createView();
+    }
+
     public function testSerializedAutocompleteOptions(): void
     {
         $entity1 = new SingleIntIdEntity(1, 'Foo');
