@@ -9,6 +9,7 @@ use Doctrine\ORM\QueryBuilder;
 use Doctrine\ORM\Tools\Pagination\Paginator;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Yceruto\Bundle\RichFormBundle\Exception\MissingOptionsException;
 use Yceruto\Bundle\RichFormBundle\Request\SearchOptions;
 use Yceruto\Bundle\RichFormBundle\Request\SearchRequest;
 
@@ -23,7 +24,11 @@ abstract class AbstractSearchAction
 
     public function __invoke(Request $request)
     {
-        $searchRequest = new SearchRequest($request);
+        try {
+            $searchRequest = new SearchRequest($request);
+        } catch (MissingOptionsException $e) {
+            return new JsonResponse([]);
+        }
         $searchOptions = $searchRequest->getOptions();
 
         if (null !== $name = $searchOptions->getEntityManagerName()) {
@@ -228,7 +233,6 @@ abstract class AbstractSearchAction
         }
 
         // Unknown fields are ignored
-        return [];
     }
 
     private function getFieldInfo(string $fieldName, ClassMetadata $classMetadata): array

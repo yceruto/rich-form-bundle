@@ -4,6 +4,7 @@ namespace Yceruto\Bundle\RichFormBundle\Request;
 
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Session\Session;
+use Yceruto\Bundle\RichFormBundle\Exception\MissingOptionsException;
 
 class SearchRequest
 {
@@ -29,7 +30,7 @@ class SearchRequest
         $options = $session->get(self::SESSION_ID.$hash);
 
         if (!\is_array($options)) {
-            throw new \RuntimeException('Missing options.');
+            throw new MissingOptionsException('Missing options.');
         }
 
         $options['dynamic_params_values'] = $request->get('dyn', []);

@@ -148,10 +148,6 @@ class Entity2SearchActionTest extends TestCase
         $this->controller->__invoke($request);
     }
 
-    /**
-     * @expectedException \RuntimeException
-     * @expectedExceptionMessage Missing options.
-     */
     public function testMissingOptions(): void
     {
         $request = Request::create('/rich-form/entity2/{hash}/search?term=foo');
@@ -159,7 +155,9 @@ class Entity2SearchActionTest extends TestCase
         $this->session->clear();
         $request->setSession($this->session);
 
-        $this->controller->__invoke($request, 'hash');
+        $response = $this->controller->__invoke($request, 'hash');
+        $this->assertInstanceOf(JsonResponse::class, $response);
+        $this->assertSame('[]', $response->getContent());
     }
 
     public function testEmptyResultsIfEmptyDatabase(): void
