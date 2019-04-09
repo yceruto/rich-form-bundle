@@ -24,7 +24,7 @@
         "doctrine/doctrine-fixtures-bundle": "^3.1",
         "doctrine/orm": "^2.6",
         "symfony/asset": "~3.4|~4.0",
-        "symfony/panther": "^0.2.0",
+        "symfony/panther": "^0.3",
         "symfony/phpunit-bridge": "~3.4|~4.0",
         "symfony/twig-bundle":"~3.4|~4.0",
         "symfony/var-dumper": "~3.4|~4.0",
