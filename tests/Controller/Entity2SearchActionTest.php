@@ -157,7 +157,7 @@ class Entity2SearchActionTest extends TestCase
 
         $response = $this->controller->__invoke($request, 'hash');
         $this->assertInstanceOf(JsonResponse::class, $response);
-        $this->assertSame('[]', $response->getContent());
+        $this->assertSame('{"results":[]}', $response->getContent());
     }
 
     public function testEmptyResultsIfEmptyDatabase(): void

@@ -27,7 +27,7 @@ abstract class AbstractSearchAction
         try {
             $searchRequest = new SearchRequest($request);
         } catch (MissingOptionsException $e) {
-            return new JsonResponse([]);
+            return new JsonResponse($this->createEmptyResults());
         }
         $searchOptions = $searchRequest->getOptions();
 
@@ -47,6 +47,11 @@ abstract class AbstractSearchAction
         $results = $this->createResults($paginator, $searchOptions);
 
         return new JsonResponse($results);
+    }
+
+    protected function createEmptyResults(): array
+    {
+        return [];
     }
 
     abstract protected function createResults(Paginator $paginator, SearchOptions $options): array;

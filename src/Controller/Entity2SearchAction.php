@@ -19,6 +19,11 @@ class Entity2SearchAction extends AbstractSearchAction
         $this->propertyAccessor = $propertyAccessor;
     }
 
+    protected function createEmptyResults(): array
+    {
+        return ['results' => []];
+    }
+
     protected function createResults(Paginator $paginator, SearchOptions $options): array
     {
         $count = 0;
