@@ -4,6 +4,7 @@ namespace Yceruto\Bundle\RichFormBundle\Form\Type;
 
 use Doctrine\ORM\Query\Parameter;
 use Doctrine\ORM\QueryBuilder;
+use Symfony\Bridge\Doctrine\Form\ChoiceList\DoctrineChoiceLoader;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\ChoiceList\Factory\CachingFactoryDecorator;
@@ -39,7 +40,7 @@ class Entity2Type extends AbstractType
     {
         if (Kernel::MAJOR_VERSION < 4) {
             // Avoid caching in LazyChoiceList - Symfony 3.4
-            $builder->addEventListener(FormEvents::PRE_SUBMIT, function (FormEvent $event) {
+            $builder->addEventListener(FormEvents::PRE_SUBMIT, static function (FormEvent $event) {
                 $choiceList = $event->getForm()->getConfig()->getAttribute('choice_list');
                 if ($choiceList instanceof LazyChoiceList) {
                     $loaded = (new \ReflectionObject($choiceList))->getProperty('loaded');
@@ -102,7 +103,7 @@ class Entity2Type extends AbstractType
 
     public function configureOptions(OptionsResolver $resolver): void
     {
-        $extendedNormalizer = function (Options $options, $expanded) {
+        $extendedNormalizer = static function (Options $options, $expanded) {
             if (true === $expanded) {
                 throw new \RuntimeException('The "expanded" option is not supported.');
             }
@@ -110,7 +111,7 @@ class Entity2Type extends AbstractType
             return $expanded;
         };
 
-        $choiceLoaderNormalizer = function (Options $options, $loader) {
+        $choiceLoaderNormalizer = static function (Options $options, $loader) {
             if (null === $loader) {
                 return null;
             }
@@ -122,7 +123,7 @@ class Entity2Type extends AbstractType
             return new Entity2LoaderDecorator($loader);
         };
 
-        $orderByNormalizer = function (Options $options, $value) {
+        $orderByNormalizer = static function (Options $options, $value) {
             $orderBy = [];
 
             if (null !== $options['group_by']) {
@@ -147,7 +148,7 @@ class Entity2Type extends AbstractType
             return $orderBy;
         };
 
-        $dynamicParamsNormalizer = function (Options $options, $value) {
+        $dynamicParamsNormalizer = static function (Options $options, $value) {
             $dynamicParams = [];
             /** @var DynamicParameter $dynamicParam */
             foreach ((array) $value as $id => $dynamicParam) {
@@ -208,7 +209,7 @@ class Entity2Type extends AbstractType
                 throw new InvalidArgumentException(sprintf('The parameter "%s" with value instance of "%s" must be scalar, object given.', $parameter->getName(), \get_class($value)));
             }
             if (\is_array($value)) {
-                array_walk_recursive($value, function ($v) use ($parameter) {
+                array_walk_recursive($value, static function ($v) use ($parameter) {
                     if (\is_object($v)) {
                         throw new InvalidArgumentException(sprintf('The parameter "%s" with value instance of "%s" must be scalar, object given.', $parameter->getName(), \get_class($v)));
                     }

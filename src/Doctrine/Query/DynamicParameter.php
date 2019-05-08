@@ -6,14 +6,7 @@ use Doctrine\ORM\Query\Parameter;
 
 class DynamicParameter extends Parameter
 {
-    /**
-     * @var array
-     */
     private $where = [];
-
-    /**
-     * @var bool
-     */
     private $optional = false;
 
     public function __construct(string $name, $default = null, $type = null)

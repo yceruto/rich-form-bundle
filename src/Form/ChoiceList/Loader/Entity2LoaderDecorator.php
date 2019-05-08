@@ -9,12 +9,11 @@ use Symfony\Component\Form\ChoiceList\Loader\ChoiceLoaderInterface;
 class Entity2LoaderDecorator implements ChoiceLoaderInterface
 {
     private $decoratedLoader;
-    private $choices = [];
-
     /**
      * @var ChoiceListInterface
      */
     private $choiceList;
+    private $choices = [];
     private $newChoices = false;
 
     public function __construct(ChoiceLoaderInterface $decoratedLoader)
