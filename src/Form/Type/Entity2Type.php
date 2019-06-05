@@ -4,7 +4,6 @@ namespace Yceruto\Bundle\RichFormBundle\Form\Type;
 
 use Doctrine\ORM\Query\Parameter;
 use Doctrine\ORM\QueryBuilder;
-use Symfony\Bridge\Doctrine\Form\ChoiceList\DoctrineChoiceLoader;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\ChoiceList\Factory\CachingFactoryDecorator;
@@ -181,7 +180,7 @@ class Entity2Type extends AbstractType
         $resolver->setAllowedTypes('dynamic_params', ['null', DynamicParameter::class.'[]']);
         $resolver->setAllowedTypes('result_fields', ['null', 'string', 'string[]']);
         $resolver->setAllowedTypes('max_results', ['null', 'int']);
-        $resolver->setAllowedTypes('group_by', ['null', 'string', 'Symfony\Component\PropertyAccess\PropertyPath']);
+        $resolver->setAllowedTypes('group_by', ['null', 'string', PropertyPath::class]);
 
         $resolver->setNormalizer('expanded', $extendedNormalizer);
         $resolver->setNormalizer('choice_loader', $choiceLoaderNormalizer);

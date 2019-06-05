@@ -9,9 +9,14 @@ use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\Tools\SchemaTool;
 use Symfony\Bridge\Doctrine\Form\DoctrineOrmExtension;
 use Symfony\Bridge\Doctrine\Test\DoctrineTestHelper;
+use Symfony\Bridge\Doctrine\Tests\Fixtures\CompositeIntIdEntity;
+use Symfony\Bridge\Doctrine\Tests\Fixtures\CompositeStringIdEntity;
+use Symfony\Bridge\Doctrine\Tests\Fixtures\GroupableEntity;
 use Symfony\Bridge\Doctrine\Tests\Fixtures\SingleAssociationToIntIdEntity;
 use Symfony\Bridge\Doctrine\Tests\Fixtures\SingleIntIdEntity;
 use Symfony\Bridge\Doctrine\Tests\Fixtures\SingleIntIdNoToStringEntity;
+use Symfony\Bridge\Doctrine\Tests\Fixtures\SingleStringCastableIdEntity;
+use Symfony\Bridge\Doctrine\Tests\Fixtures\SingleStringIdEntity;
 use Symfony\Component\Form\ChoiceList\Factory\CachingFactoryDecorator;
 use Symfony\Component\Form\ChoiceList\View\ChoiceView;
 use Symfony\Component\Form\Test\TypeTestCase;
@@ -28,15 +33,6 @@ class Entity2TypeTest extends TypeTestCase
 {
     public const TESTED_TYPE = Entity2Type::class;
 
-    public const ITEM_GROUP_CLASS = 'Symfony\Bridge\Doctrine\Tests\Fixtures\GroupableEntity';
-    public const SINGLE_IDENT_CLASS = 'Symfony\Bridge\Doctrine\Tests\Fixtures\SingleIntIdEntity';
-    public const SINGLE_IDENT_NO_TO_STRING_CLASS = 'Symfony\Bridge\Doctrine\Tests\Fixtures\SingleIntIdNoToStringEntity';
-    public const SINGLE_STRING_IDENT_CLASS = 'Symfony\Bridge\Doctrine\Tests\Fixtures\SingleStringIdEntity';
-    public const SINGLE_ASSOC_IDENT_CLASS = 'Symfony\Bridge\Doctrine\Tests\Fixtures\SingleAssociationToIntIdEntity';
-    public const SINGLE_STRING_CASTABLE_IDENT_CLASS = 'Symfony\Bridge\Doctrine\Tests\Fixtures\SingleStringCastableIdEntity';
-    public const COMPOSITE_IDENT_CLASS = 'Symfony\Bridge\Doctrine\Tests\Fixtures\CompositeIntIdEntity';
-    public const COMPOSITE_STRING_IDENT_CLASS = 'Symfony\Bridge\Doctrine\Tests\Fixtures\CompositeStringIdEntity';
-
     /**
      * @var EntityManager
      */
@@ -52,7 +48,7 @@ class Entity2TypeTest extends TypeTestCase
      */
     private $session;
 
-    protected function setUp()
+    protected function setUp(): void
     {
         $this->em = DoctrineTestHelper::createTestEntityManager();
         $this->emRegistry = $this->createRegistryMock('default', $this->em);
@@ -62,14 +58,14 @@ class Entity2TypeTest extends TypeTestCase
 
         $schemaTool = new SchemaTool($this->em);
         $classes = [
-            $this->em->getClassMetadata(self::ITEM_GROUP_CLASS),
-            $this->em->getClassMetadata(self::SINGLE_IDENT_CLASS),
-            $this->em->getClassMetadata(self::SINGLE_IDENT_NO_TO_STRING_CLASS),
-            $this->em->getClassMetadata(self::SINGLE_STRING_IDENT_CLASS),
-            $this->em->getClassMetadata(self::SINGLE_ASSOC_IDENT_CLASS),
-            $this->em->getClassMetadata(self::SINGLE_STRING_CASTABLE_IDENT_CLASS),
-            $this->em->getClassMetadata(self::COMPOSITE_IDENT_CLASS),
-            $this->em->getClassMetadata(self::COMPOSITE_STRING_IDENT_CLASS),
+            $this->em->getClassMetadata(GroupableEntity::class),
+            $this->em->getClassMetadata(SingleIntIdEntity::class),
+            $this->em->getClassMetadata(SingleIntIdNoToStringEntity::class),
+            $this->em->getClassMetadata(SingleStringIdEntity::class),
+            $this->em->getClassMetadata(SingleAssociationToIntIdEntity::class),
+            $this->em->getClassMetadata(SingleStringCastableIdEntity::class),
+            $this->em->getClassMetadata(CompositeIntIdEntity::class),
+            $this->em->getClassMetadata(CompositeStringIdEntity::class),
         ];
 
         try {
@@ -83,7 +79,7 @@ class Entity2TypeTest extends TypeTestCase
         }
     }
 
-    protected function tearDown()
+    protected function tearDown(): void
     {
         parent::tearDown();
 
@@ -140,7 +136,7 @@ class Entity2TypeTest extends TypeTestCase
     {
         $this->factory->createNamed('name', static::TESTED_TYPE, null, [
             'em' => 'default',
-            'class' => self::SINGLE_IDENT_CLASS,
+            'class' => SingleIntIdEntity::class,
             'expanded' => true,
         ]);
     }
@@ -154,7 +150,7 @@ class Entity2TypeTest extends TypeTestCase
 
         $field = $this->factory->createNamed('name', static::TESTED_TYPE, null, [
             'em' => 'default',
-            'class' => self::SINGLE_IDENT_CLASS,
+            'class' => SingleIntIdEntity::class,
             'choice_label' => 'name',
         ]);
 
@@ -170,7 +166,7 @@ class Entity2TypeTest extends TypeTestCase
 
         $view = $this->factory->createNamed('name', static::TESTED_TYPE, $entity2, [
             'em' => 'default',
-            'class' => self::SINGLE_IDENT_CLASS,
+            'class' => SingleIntIdEntity::class,
             'choice_label' => 'name',
         ])->createView();
 
@@ -188,7 +184,7 @@ class Entity2TypeTest extends TypeTestCase
 
         $view = $this->factory->createNamed('name', static::TESTED_TYPE, $entity2, [
             'em' => 'default',
-            'class' => self::SINGLE_IDENT_CLASS,
+            'class' => SingleIntIdEntity::class,
             'choice_label' => 'name',
             'result_fields' => ['phoneNumbers'],
             'select2_options' => [
@@ -213,7 +209,7 @@ class Entity2TypeTest extends TypeTestCase
 
         $field = $this->factory->createNamed('name', static::TESTED_TYPE, $entity1, [
             'em' => 'default',
-            'class' => self::SINGLE_IDENT_CLASS,
+            'class' => SingleIntIdEntity::class,
             'choice_label' => 'name',
             'choice_value' => 'name',
         ]);
@@ -231,7 +227,7 @@ class Entity2TypeTest extends TypeTestCase
 
         $field = $this->factory->createNamed('name', static::TESTED_TYPE, null, [
             'em' => 'default',
-            'class' => self::SINGLE_IDENT_CLASS,
+            'class' => SingleIntIdEntity::class,
             'multiple' => true,
         ]);
 
@@ -247,7 +243,7 @@ class Entity2TypeTest extends TypeTestCase
 
         $field = $this->factory->createNamed('name', static::TESTED_TYPE, new ArrayCollection([$entity1]), [
             'em' => 'default',
-            'class' => self::SINGLE_IDENT_CLASS,
+            'class' => SingleIntIdEntity::class,
             'multiple' => true,
             'choice_label' => 'name',
         ]);
@@ -260,7 +256,7 @@ class Entity2TypeTest extends TypeTestCase
     {
         $form = $this->factory->create(static::TESTED_TYPE, null, [
             'em' => 'default',
-            'class' => self::SINGLE_IDENT_CLASS,
+            'class' => SingleIntIdEntity::class,
         ]);
 
         $this->assertCount(0, $form->createView()->vars['choices']);
@@ -276,7 +272,7 @@ class Entity2TypeTest extends TypeTestCase
     {
         $form = $this->factory->create(static::TESTED_TYPE, null, [
             'em' => 'default',
-            'class' => self::SINGLE_IDENT_CLASS,
+            'class' => SingleIntIdEntity::class,
             'multiple' => true,
         ]);
 
@@ -296,7 +292,7 @@ class Entity2TypeTest extends TypeTestCase
         $emptyArray = [];
         $form = $this->factory->create(static::TESTED_TYPE, null, [
             'em' => 'default',
-            'class' => self::SINGLE_IDENT_CLASS,
+            'class' => SingleIntIdEntity::class,
             'multiple' => true,
         ]);
         $form->setData($emptyArray);
@@ -317,7 +313,7 @@ class Entity2TypeTest extends TypeTestCase
         $this->persist([$entity1]);
         $form = $this->factory->create(static::TESTED_TYPE, null, [
             'em' => 'default',
-            'class' => self::SINGLE_IDENT_CLASS,
+            'class' => SingleIntIdEntity::class,
             'multiple' => true,
         ]);
         $existing = [0 => $entity1];
@@ -341,7 +337,7 @@ class Entity2TypeTest extends TypeTestCase
 
         $form = $this->factory->create(static::TESTED_TYPE, null, [
             'em' => 'default',
-            'class' => self::SINGLE_IDENT_CLASS,
+            'class' => SingleIntIdEntity::class,
             'empty_data' => $emptyData,
         ]);
 
@@ -362,7 +358,7 @@ class Entity2TypeTest extends TypeTestCase
 
         $form = $this->factory->create(static::TESTED_TYPE, null, [
             'em' => 'default',
-            'class' => self::SINGLE_IDENT_CLASS,
+            'class' => SingleIntIdEntity::class,
             'multiple' => true,
             'empty_data' => $emptyData,
         ]);
@@ -388,7 +384,7 @@ class Entity2TypeTest extends TypeTestCase
 
         $form = $this->factory->createNamed('name', static::TESTED_TYPE, null, [
             'em' => 'default',
-            'class' => self::SINGLE_IDENT_CLASS,
+            'class' => SingleIntIdEntity::class,
             'multiple' => true,
             'choice_label' => 'name',
         ]);
@@ -418,7 +414,7 @@ class Entity2TypeTest extends TypeTestCase
 
         $form = $this->factory->createNamed('name', static::TESTED_TYPE, null, [
             'em' => 'default',
-            'class' => self::SINGLE_ASSOC_IDENT_CLASS,
+            'class' => SingleAssociationToIntIdEntity::class,
             'multiple' => true,
             'choice_label' => 'name',
         ]);
@@ -444,7 +440,7 @@ class Entity2TypeTest extends TypeTestCase
 
         $form = $this->factory->createNamed('name', static::TESTED_TYPE, null, [
             'em' => 'default',
-            'class' => self::SINGLE_IDENT_CLASS,
+            'class' => SingleIntIdEntity::class,
             'multiple' => true,
             'choice_label' => 'name',
         ]);
@@ -474,7 +470,7 @@ class Entity2TypeTest extends TypeTestCase
     {
         $this->factory->createNamed('name', static::TESTED_TYPE, null, [
             'em' => 'default',
-            'class' => self::COMPOSITE_IDENT_CLASS,
+            'class' => CompositeIntIdEntity::class,
         ]);
     }
 
@@ -486,8 +482,8 @@ class Entity2TypeTest extends TypeTestCase
     {
         $this->factory->createNamed('name', static::TESTED_TYPE, null, [
             'em' => 'default',
-            'class' => self::ITEM_GROUP_CLASS,
-            'query_builder' => function (EntityRepository $r) {
+            'class' => GroupableEntity::class,
+            'query_builder' => static function (EntityRepository $r) {
                 return $r->createQueryBuilder('entity')->where('entity = :entity')->setParameter('entity', new \stdClass());
             },
         ])->createView();
@@ -508,9 +504,9 @@ class Entity2TypeTest extends TypeTestCase
         $type = static::TESTED_TYPE;
         $view = $this->factory->createNamed('name', $type, null, [
             'em' => 'default',
-            'class' => self::SINGLE_IDENT_CLASS,
+            'class' => SingleIntIdEntity::class,
             'choice_label' => 'name',
-            'query_builder' => function (EntityRepository $r) use (&$queryBuilder) {
+            'query_builder' => static function (EntityRepository $r) use (&$queryBuilder) {
                 return $queryBuilder = $r->createQueryBuilder('entity')->where('entity.phoneNumbers is not null');
             },
             'dynamic_params' => [
@@ -524,7 +520,7 @@ class Entity2TypeTest extends TypeTestCase
         ])->createView();
 
         $options = [
-            'class' => self::SINGLE_IDENT_CLASS,
+            'class' => SingleIntIdEntity::class,
             'em' => 'default',
             'max_results' => 15,
             'search_by' => ['name'],
@@ -553,8 +549,8 @@ class Entity2TypeTest extends TypeTestCase
     {
         $this->factory->createNamed('name', static::TESTED_TYPE, null, [
             'em' => 'default',
-            'class' => self::SINGLE_IDENT_CLASS,
-            'group_by' => function () {
+            'class' => SingleIntIdEntity::class,
+            'group_by' => static function () {
                 return 'foo';
             },
         ]);
@@ -568,7 +564,7 @@ class Entity2TypeTest extends TypeTestCase
     {
         $this->factory->createNamed('name', static::TESTED_TYPE, null, [
             'em' => 'default',
-            'class' => self::SINGLE_IDENT_CLASS,
+            'class' => SingleIntIdEntity::class,
             'order_by' => ['name' => 'typo'],
         ]);
     }
@@ -584,7 +580,7 @@ class Entity2TypeTest extends TypeTestCase
 
         $this->factory->createNamed('name', static::TESTED_TYPE, null, [
             'em' => 'default',
-            'class' => self::SINGLE_IDENT_CLASS,
+            'class' => SingleIntIdEntity::class,
             'dynamic_params' => [$dynamicParam],
         ]);
     }
@@ -597,7 +593,7 @@ class Entity2TypeTest extends TypeTestCase
     {
         $this->factory->createNamed('name', static::TESTED_TYPE, null, [
             'em' => 'default',
-            'class' => self::SINGLE_IDENT_CLASS,
+            'class' => SingleIntIdEntity::class,
             'dynamic_params' => ['#form_phone_number' => new DynamicParameter('number')],
         ]);
     }
@@ -609,7 +605,7 @@ class Entity2TypeTest extends TypeTestCase
 
         $view = $this->factory->createNamed('name', static::TESTED_TYPE, null, [
             'em' => 'default',
-            'class' => self::SINGLE_IDENT_CLASS,
+            'class' => SingleIntIdEntity::class,
             'dynamic_params' => ['#form_phone_number' => $dynamicParam],
         ])->createView();
 
