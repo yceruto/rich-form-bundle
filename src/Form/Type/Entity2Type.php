@@ -115,7 +115,7 @@ class Entity2Type extends AbstractType
                 return null;
             }
 
-            if (!$options['id_reader']->isSingleId()) {
+            if (null === $options['id_reader'] || !$options['id_reader']->isSingleId()) {
                 throw new \RuntimeException('Composite identifier is not supported.');
             }
 

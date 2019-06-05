@@ -31,8 +31,6 @@ use Yceruto\Bundle\RichFormBundle\Request\SearchRequest;
 
 class Entity2TypeTest extends TypeTestCase
 {
-    public const TESTED_TYPE = Entity2Type::class;
-
     /**
      * @var EntityManager
      */
@@ -112,7 +110,7 @@ class Entity2TypeTest extends TypeTestCase
 
     protected function getTypes(): array
     {
-        $class = static::TESTED_TYPE;
+        $class = Entity2Type::class;
 
         return [new $class($this->session)];
     }
@@ -134,7 +132,7 @@ class Entity2TypeTest extends TypeTestCase
      */
     public function testExpandedOptionIsNotSupported(): void
     {
-        $this->factory->createNamed('name', static::TESTED_TYPE, null, [
+        $this->factory->createNamed('name', Entity2Type::class, null, [
             'em' => 'default',
             'class' => SingleIntIdEntity::class,
             'expanded' => true,
@@ -148,7 +146,7 @@ class Entity2TypeTest extends TypeTestCase
 
         $this->persist([$entity1, $entity2]);
 
-        $field = $this->factory->createNamed('name', static::TESTED_TYPE, null, [
+        $field = $this->factory->createNamed('name', Entity2Type::class, null, [
             'em' => 'default',
             'class' => SingleIntIdEntity::class,
             'choice_label' => 'name',
@@ -164,7 +162,7 @@ class Entity2TypeTest extends TypeTestCase
 
         $this->persist([$entity1, $entity2]);
 
-        $view = $this->factory->createNamed('name', static::TESTED_TYPE, $entity2, [
+        $view = $this->factory->createNamed('name', Entity2Type::class, $entity2, [
             'em' => 'default',
             'class' => SingleIntIdEntity::class,
             'choice_label' => 'name',
@@ -182,7 +180,7 @@ class Entity2TypeTest extends TypeTestCase
 
         $this->persist([$entity1, $entity2]);
 
-        $view = $this->factory->createNamed('name', static::TESTED_TYPE, $entity2, [
+        $view = $this->factory->createNamed('name', Entity2Type::class, $entity2, [
             'em' => 'default',
             'class' => SingleIntIdEntity::class,
             'choice_label' => 'name',
@@ -207,7 +205,7 @@ class Entity2TypeTest extends TypeTestCase
 
         $this->persist([$entity1, $entity2]);
 
-        $field = $this->factory->createNamed('name', static::TESTED_TYPE, $entity1, [
+        $field = $this->factory->createNamed('name', Entity2Type::class, $entity1, [
             'em' => 'default',
             'class' => SingleIntIdEntity::class,
             'choice_label' => 'name',
@@ -225,7 +223,7 @@ class Entity2TypeTest extends TypeTestCase
 
         $this->persist([$entity1, $entity2]);
 
-        $field = $this->factory->createNamed('name', static::TESTED_TYPE, null, [
+        $field = $this->factory->createNamed('name', Entity2Type::class, null, [
             'em' => 'default',
             'class' => SingleIntIdEntity::class,
             'multiple' => true,
@@ -241,7 +239,7 @@ class Entity2TypeTest extends TypeTestCase
 
         $this->persist([$entity1, $entity2]);
 
-        $field = $this->factory->createNamed('name', static::TESTED_TYPE, new ArrayCollection([$entity1]), [
+        $field = $this->factory->createNamed('name', Entity2Type::class, new ArrayCollection([$entity1]), [
             'em' => 'default',
             'class' => SingleIntIdEntity::class,
             'multiple' => true,
@@ -254,7 +252,7 @@ class Entity2TypeTest extends TypeTestCase
 
     public function testSubmitNull(): void
     {
-        $form = $this->factory->create(static::TESTED_TYPE, null, [
+        $form = $this->factory->create(Entity2Type::class, null, [
             'em' => 'default',
             'class' => SingleIntIdEntity::class,
         ]);
@@ -270,7 +268,7 @@ class Entity2TypeTest extends TypeTestCase
 
     public function testSubmitNullMultiple(): void
     {
-        $form = $this->factory->create(static::TESTED_TYPE, null, [
+        $form = $this->factory->create(Entity2Type::class, null, [
             'em' => 'default',
             'class' => SingleIntIdEntity::class,
             'multiple' => true,
@@ -290,7 +288,7 @@ class Entity2TypeTest extends TypeTestCase
     public function testSetDataEmptyArraySubmitNullMultiple(): void
     {
         $emptyArray = [];
-        $form = $this->factory->create(static::TESTED_TYPE, null, [
+        $form = $this->factory->create(Entity2Type::class, null, [
             'em' => 'default',
             'class' => SingleIntIdEntity::class,
             'multiple' => true,
@@ -311,7 +309,7 @@ class Entity2TypeTest extends TypeTestCase
     {
         $entity1 = new SingleIntIdEntity(1, 'Foo');
         $this->persist([$entity1]);
-        $form = $this->factory->create(static::TESTED_TYPE, null, [
+        $form = $this->factory->create(Entity2Type::class, null, [
             'em' => 'default',
             'class' => SingleIntIdEntity::class,
             'multiple' => true,
@@ -335,7 +333,7 @@ class Entity2TypeTest extends TypeTestCase
         $entity1 = new SingleIntIdEntity(1, 'Foo');
         $this->persist([$entity1]);
 
-        $form = $this->factory->create(static::TESTED_TYPE, null, [
+        $form = $this->factory->create(Entity2Type::class, null, [
             'em' => 'default',
             'class' => SingleIntIdEntity::class,
             'empty_data' => $emptyData,
@@ -356,7 +354,7 @@ class Entity2TypeTest extends TypeTestCase
         $entity1 = new SingleIntIdEntity(1, 'Foo');
         $this->persist([$entity1]);
 
-        $form = $this->factory->create(static::TESTED_TYPE, null, [
+        $form = $this->factory->create(Entity2Type::class, null, [
             'em' => 'default',
             'class' => SingleIntIdEntity::class,
             'multiple' => true,
@@ -382,7 +380,7 @@ class Entity2TypeTest extends TypeTestCase
 
         $this->persist([$entity1, $entity2, $entity3]);
 
-        $form = $this->factory->createNamed('name', static::TESTED_TYPE, null, [
+        $form = $this->factory->createNamed('name', Entity2Type::class, null, [
             'em' => 'default',
             'class' => SingleIntIdEntity::class,
             'multiple' => true,
@@ -412,7 +410,7 @@ class Entity2TypeTest extends TypeTestCase
 
         $this->persist([$innerEntity1, $innerEntity2, $innerEntity3, $entity1, $entity2, $entity3]);
 
-        $form = $this->factory->createNamed('name', static::TESTED_TYPE, null, [
+        $form = $this->factory->createNamed('name', Entity2Type::class, null, [
             'em' => 'default',
             'class' => SingleAssociationToIntIdEntity::class,
             'multiple' => true,
@@ -438,7 +436,7 @@ class Entity2TypeTest extends TypeTestCase
 
         $this->persist([$entity1, $entity2, $entity3]);
 
-        $form = $this->factory->createNamed('name', static::TESTED_TYPE, null, [
+        $form = $this->factory->createNamed('name', Entity2Type::class, null, [
             'em' => 'default',
             'class' => SingleIntIdEntity::class,
             'multiple' => true,
@@ -468,7 +466,7 @@ class Entity2TypeTest extends TypeTestCase
      */
     public function testCompositeIdentifierIsNotSupported(): void
     {
-        $this->factory->createNamed('name', static::TESTED_TYPE, null, [
+        $this->factory->createNamed('name', Entity2Type::class, null, [
             'em' => 'default',
             'class' => CompositeIntIdEntity::class,
         ]);
@@ -480,7 +478,7 @@ class Entity2TypeTest extends TypeTestCase
      */
     public function testFailsIfQueryParameterValueIsNotScalar(): void
     {
-        $this->factory->createNamed('name', static::TESTED_TYPE, null, [
+        $this->factory->createNamed('name', Entity2Type::class, null, [
             'em' => 'default',
             'class' => GroupableEntity::class,
             'query_builder' => static function (EntityRepository $r) {
@@ -501,7 +499,7 @@ class Entity2TypeTest extends TypeTestCase
         $dynamicParam->where('entity.phoneNumbers like :number');
 
         /** @var Entity2Type $type */
-        $type = static::TESTED_TYPE;
+        $type = Entity2Type::class;
         $view = $this->factory->createNamed('name', $type, null, [
             'em' => 'default',
             'class' => SingleIntIdEntity::class,
@@ -547,7 +545,7 @@ class Entity2TypeTest extends TypeTestCase
      */
     public function testGroupByCallableIsNotAllowed(): void
     {
-        $this->factory->createNamed('name', static::TESTED_TYPE, null, [
+        $this->factory->createNamed('name', Entity2Type::class, null, [
             'em' => 'default',
             'class' => SingleIntIdEntity::class,
             'group_by' => static function () {
@@ -562,7 +560,7 @@ class Entity2TypeTest extends TypeTestCase
      */
     public function testOrderByOptionFailsIfUnknownOrder(): void
     {
-        $this->factory->createNamed('name', static::TESTED_TYPE, null, [
+        $this->factory->createNamed('name', Entity2Type::class, null, [
             'em' => 'default',
             'class' => SingleIntIdEntity::class,
             'order_by' => ['name' => 'typo'],
@@ -578,7 +576,7 @@ class Entity2TypeTest extends TypeTestCase
         $dynamicParam = new DynamicParameter('number');
         $dynamicParam->where('entity.phoneNumbers like :number');
 
-        $this->factory->createNamed('name', static::TESTED_TYPE, null, [
+        $this->factory->createNamed('name', Entity2Type::class, null, [
             'em' => 'default',
             'class' => SingleIntIdEntity::class,
             'dynamic_params' => [$dynamicParam],
@@ -591,7 +589,7 @@ class Entity2TypeTest extends TypeTestCase
      */
     public function testDynamicParamsOptionFailsIfEmptyWhere(): void
     {
-        $this->factory->createNamed('name', static::TESTED_TYPE, null, [
+        $this->factory->createNamed('name', Entity2Type::class, null, [
             'em' => 'default',
             'class' => SingleIntIdEntity::class,
             'dynamic_params' => ['#form_phone_number' => new DynamicParameter('number')],
@@ -603,7 +601,7 @@ class Entity2TypeTest extends TypeTestCase
         $dynamicParam = new DynamicParameter('number');
         $dynamicParam->where('entity.phoneNumbers like :number');
 
-        $view = $this->factory->createNamed('name', static::TESTED_TYPE, null, [
+        $view = $this->factory->createNamed('name', Entity2Type::class, null, [
             'em' => 'default',
             'class' => SingleIntIdEntity::class,
             'dynamic_params' => ['#form_phone_number' => $dynamicParam],
