@@ -8,6 +8,7 @@ use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\ChoiceList\Factory\CachingFactoryDecorator;
 use Symfony\Component\Form\ChoiceList\LazyChoiceList;
+use Symfony\Component\Form\ChoiceList\Loader\ChoiceLoaderInterface;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Form\FormEvent;
 use Symfony\Component\Form\FormEvents;
@@ -102,69 +103,6 @@ class Entity2Type extends AbstractType
 
     public function configureOptions(OptionsResolver $resolver): void
     {
-        $extendedNormalizer = static function (Options $options, $expanded) {
-            if (true === $expanded) {
-                throw new \RuntimeException('The "expanded" option is not supported.');
-            }
-
-            return $expanded;
-        };
-
-        $choiceLoaderNormalizer = static function (Options $options, $loader) {
-            if (null === $loader) {
-                return null;
-            }
-
-            if (null === $options['id_reader'] || !$options['id_reader']->isSingleId()) {
-                throw new \RuntimeException('Composite identifier is not supported.');
-            }
-
-            return new Entity2LoaderDecorator($loader);
-        };
-
-        $orderByNormalizer = static function (Options $options, $value) {
-            $orderBy = [];
-
-            if (null !== $options['group_by']) {
-                array_unshift($orderBy, (string) $options['group_by']);
-            }
-
-            foreach ((array) $value as $field => $order) {
-                if (\is_int($field)) {
-                    $field = $order;
-                    $order = 'ASC';
-                }
-
-                $order = strtoupper($order);
-
-                if ('ASC' !== $order && 'DESC' !== $order) {
-                    throw new InvalidArgumentException(sprintf('Invalid order "%s" for "order_by" option, the allowed values are "ASC" and "DESC".', $order));
-                }
-
-                $orderBy[$field] = $order;
-            }
-
-            return $orderBy;
-        };
-
-        $dynamicParamsNormalizer = static function (Options $options, $value) {
-            $dynamicParams = [];
-            /** @var DynamicParameter $dynamicParam */
-            foreach ((array) $value as $id => $dynamicParam) {
-                if (!\is_string($id)) {
-                    throw new InvalidArgumentException(sprintf('The option "dynamic_params" expects as key of the array a string (field name or CSS selector), %s given.', gettype($id)));
-                }
-
-                if ([] === $dynamicParam->getWhere()) {
-                    throw new InvalidOptionsException('Dynamic parameters must have a "where" statement.');
-                }
-
-                $dynamicParams[$id] = $dynamicParam;
-            }
-
-            return $dynamicParams;
-        };
-
         $resolver->setDefaults([
             'entity_manager' => null,
             'search_by' => null,
@@ -182,10 +120,75 @@ class Entity2Type extends AbstractType
         $resolver->setAllowedTypes('max_results', ['null', 'int']);
         $resolver->setAllowedTypes('group_by', ['null', 'string', PropertyPath::class]);
 
-        $resolver->setNormalizer('expanded', $extendedNormalizer);
-        $resolver->setNormalizer('choice_loader', $choiceLoaderNormalizer);
-        $resolver->setNormalizer('order_by', $orderByNormalizer);
-        $resolver->setNormalizer('dynamic_params', $dynamicParamsNormalizer);
+        $resolver->setNormalizer('expanded', \Closure::fromCallable(__CLASS__.'::extendedNormalizer'));
+        $resolver->setNormalizer('choice_loader', \Closure::fromCallable(__CLASS__.'::choiceLoaderNormalizer'));
+        $resolver->setNormalizer('order_by', \Closure::fromCallable(__CLASS__.'::orderByNormalizer'));
+        $resolver->setNormalizer('dynamic_params', \Closure::fromCallable(__CLASS__.'::dynamicParamsNormalizer'));
+    }
+
+    public static function extendedNormalizer(Options $options, $value): bool
+    {
+        if (true === $value) {
+            throw new \RuntimeException('The "expanded" option is not supported.');
+        }
+
+        return $value;
+    }
+
+    public static function choiceLoaderNormalizer(Options $options, $loader): ?ChoiceLoaderInterface {
+        if (null === $loader) {
+            return null;
+        }
+
+        if (null === $options['id_reader'] || !$options['id_reader']->isSingleId()) {
+            throw new \RuntimeException('Composite identifier is not supported.');
+        }
+
+        return new Entity2LoaderDecorator($loader);
+    }
+
+    public static function orderByNormalizer(Options $options, $value): array
+    {
+        $orderBy = [];
+
+        if (null !== $options['group_by']) {
+            array_unshift($orderBy, (string) $options['group_by']);
+        }
+
+        foreach ((array) $value as $field => $order) {
+            if (\is_int($field)) {
+                $field = $order;
+                $order = 'ASC';
+            }
+
+            $order = strtoupper($order);
+
+            if ('ASC' !== $order && 'DESC' !== $order) {
+                throw new InvalidArgumentException(sprintf('Invalid order "%s" for "order_by" option, the allowed values are "ASC" and "DESC".', $order));
+            }
+
+            $orderBy[$field] = $order;
+        }
+
+        return $orderBy;
+    }
+
+    public static function dynamicParamsNormalizer(Options $options, $value): array {
+        $dynamicParams = [];
+        /** @var DynamicParameter $dynamicParam */
+        foreach ((array) $value as $id => $dynamicParam) {
+            if (!\is_string($id)) {
+                throw new InvalidArgumentException(sprintf('The option "dynamic_params" expects as key of the array a string (field name or CSS selector), %s given.', gettype($id)));
+            }
+
+            if ([] === $dynamicParam->getWhere()) {
+                throw new InvalidOptionsException('Dynamic parameters must have a "where" statement.');
+            }
+
+            $dynamicParams[$id] = $dynamicParam;
+        }
+
+        return $dynamicParams;
     }
 
     public function getBlockPrefix(): string
