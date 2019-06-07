@@ -20,7 +20,7 @@
         "symfony/options-resolver": "^4.2"
     },
     "require-dev": {
-        "doctrine/doctrine-bundle": "^1.8",
+        "doctrine/doctrine-bundle": "^1.10",
         "doctrine/doctrine-fixtures-bundle": "^3.2",
         "doctrine/orm": "^2.6",
         "symfony/asset": "^3.4|^4.2",
