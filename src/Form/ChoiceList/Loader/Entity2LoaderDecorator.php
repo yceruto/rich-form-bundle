@@ -3,18 +3,14 @@
 namespace Yceruto\Bundle\RichFormBundle\Form\ChoiceList\Loader;
 
 use Symfony\Component\Form\ChoiceList\ArrayChoiceList;
-use Symfony\Component\Form\ChoiceList\ChoiceListInterface;
 use Symfony\Component\Form\ChoiceList\Loader\ChoiceLoaderInterface;
 
 class Entity2LoaderDecorator implements ChoiceLoaderInterface
 {
     private $decoratedLoader;
-    /**
-     * @var ChoiceListInterface
-     */
     private $choiceList;
     private $choices = [];
-    private $newChoices = false;
+    private $cached = false;
 
     public function __construct(ChoiceLoaderInterface $decoratedLoader)
     {
@@ -23,11 +19,11 @@ class Entity2LoaderDecorator implements ChoiceLoaderInterface
 
     public function loadChoiceList($value = null)
     {
-        if (null !== $this->choiceList && !$this->newChoices) {
+        if (null !== $this->choiceList && $this->cached) {
             return $this->choiceList;
         }
 
-        $this->newChoices = false;
+        $this->cached = true;
 
         return $this->choiceList = new ArrayChoiceList($this->choices, $value);
     }
@@ -35,7 +31,7 @@ class Entity2LoaderDecorator implements ChoiceLoaderInterface
     public function loadChoicesForValues(array $values, $value = null): array
     {
         if ($this->choices !== $choices = $this->decoratedLoader->loadChoicesForValues($values, $value)) {
-            $this->newChoices = true;
+            $this->cached = false;
         }
 
         return $this->choices = $choices;
@@ -51,7 +47,7 @@ class Entity2LoaderDecorator implements ChoiceLoaderInterface
 
         if ($this->choices !== $newChoices) {
             $this->choices = $newChoices;
-            $this->newChoices = true;
+            $this->cached = false;
         }
 
         return $values;
