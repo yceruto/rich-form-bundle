@@ -5,6 +5,9 @@ namespace Yceruto\Bundle\RichFormBundle\Form\ChoiceList\Loader;
 use Symfony\Component\Form\ChoiceList\ArrayChoiceList;
 use Symfony\Component\Form\ChoiceList\Loader\ChoiceLoaderInterface;
 
+/**
+ * Loads the selected choices only.
+ */
 class Entity2LoaderDecorator implements ChoiceLoaderInterface
 {
     private $decoratedLoader;
