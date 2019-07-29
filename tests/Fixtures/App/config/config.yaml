@@ -5,6 +5,7 @@ imports:
     - { resource: services.yaml }
 
 parameters:
+    kernel.name: 'AppKernel'
     database_path: '%kernel.root_dir%/../../../build/test.db'
 
 framework:
@@ -34,6 +35,7 @@ doctrine:
 
 twig:
     strict_variables: true
+    exception_controller: ~
     default_path: '%kernel.root_dir%/templates'
     form_themes:
         - '@RichForm/form/fields.html.twig'
