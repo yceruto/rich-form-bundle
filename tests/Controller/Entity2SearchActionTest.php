@@ -4,6 +4,7 @@ namespace Yceruto\Bundle\RichFormBundle\Tests\Controller;
 
 use Doctrine\Common\Persistence\ManagerRegistry;
 use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\QueryBuilder;
 use Doctrine\ORM\Tools\SchemaTool;
 use PHPUnit\Framework\TestCase;
 use Symfony\Bridge\Doctrine\Test\DoctrineTestHelper;
@@ -64,6 +65,7 @@ class Entity2SearchActionTest extends TestCase
             'em' => 'default',
             'max_results' => 10,
             'search_by' => null,
+            'search_callback' => null,
             'order_by' => [],
             'result_fields' => null,
             'group_by' => null,
@@ -235,6 +237,7 @@ class Entity2SearchActionTest extends TestCase
             'em' => 'default',
             'max_results' => 10,
             'search_by' => 'phoneNumbers',
+            'search_callback' => null,
             'order_by' => [],
             'result_fields' => null,
             'group_by' => null,
@@ -263,6 +266,7 @@ class Entity2SearchActionTest extends TestCase
             'em' => 'default',
             'max_results' => 10,
             'search_by' => 'single',
+            'search_callback' => null,
             'order_by' => [],
             'result_fields' => null,
             'group_by' => null,
@@ -291,6 +295,7 @@ class Entity2SearchActionTest extends TestCase
             'em' => 'default',
             'max_results' => 10,
             'search_by' => 'single.name',
+            'search_callback' => null,
             'order_by' => [],
             'result_fields' => null,
             'group_by' => null,
@@ -319,6 +324,7 @@ class Entity2SearchActionTest extends TestCase
             'em' => 'default',
             'max_results' => 10,
             'search_by' => 'contact.phone',
+            'search_callback' => null,
             'order_by' => [],
             'result_fields' => null,
             'group_by' => null,
@@ -347,6 +353,7 @@ class Entity2SearchActionTest extends TestCase
             'em' => 'default',
             'max_results' => 10,
             'search_by' => 'contact.phone',
+            'search_callback' => null,
             'order_by' => [],
             'result_fields' => [
                 // string cast since Contact is an object
@@ -378,6 +385,7 @@ class Entity2SearchActionTest extends TestCase
             'em' => 'default',
             'max_results' => 10,
             'search_by' => null,
+            'search_callback' => null,
             'order_by' => [],
             'result_fields' => 'groupName',
             'group_by' => null,
@@ -405,6 +413,7 @@ class Entity2SearchActionTest extends TestCase
             'em' => 'default',
             'max_results' => 10,
             'search_by' => null,
+            'search_callback' => null,
             'order_by' => [],
             'result_fields' => null,
             'group_by' => 'groupName',
@@ -432,6 +441,7 @@ class Entity2SearchActionTest extends TestCase
             'em' => 'default',
             'max_results' => 10,
             'search_by' => null,
+            'search_callback' => null,
             'order_by' => ['name' => 'DESC'],
             'result_fields' => null,
             'group_by' => null,
@@ -458,6 +468,7 @@ class Entity2SearchActionTest extends TestCase
             'em' => 'default',
             'max_results' => 10,
             'search_by' => null,
+            'search_callback' => null,
             'order_by' => ['entity.name' => 'DESC'],
             'result_fields' => null,
             'group_by' => null,
@@ -491,6 +502,7 @@ class Entity2SearchActionTest extends TestCase
             'em' => 'default',
             'max_results' => 10,
             'search_by' => null,
+            'search_callback' => null,
             'order_by' => [],
             'result_fields' => null,
             'group_by' => null,
@@ -518,6 +530,7 @@ class Entity2SearchActionTest extends TestCase
             'em' => 'default',
             'max_results' => 1,
             'search_by' => null,
+            'search_callback' => null,
             'order_by' => [],
             'result_fields' => null,
             'group_by' => null,
@@ -569,13 +582,17 @@ class Entity2SearchActionTest extends TestCase
             'em' => 'default',
             'max_results' => 10,
             'search_by' => 'name',
+            'search_callback' => static function (QueryBuilder $qb, SearchRequest $request) {
+                $qb->andWhere('entity.groupName = :group')
+                    ->setParameter('group', $request->getDynamicParamValue('group'));
+            },
             'order_by' => ['name' => 'DESC'],
             'result_fields' => null,
             'group_by' => null,
             'class' => self::ITEM_GROUP_CLASS,
             'text' => 'name',
             'qb_dynamic_params' => [
-                (new DynamicParameter('group'))->where('entity.groupName = :group'),
+                'group' => 'group',
             ],
         ]);
 
@@ -599,13 +616,19 @@ class Entity2SearchActionTest extends TestCase
             'em' => 'default',
             'max_results' => 10,
             'search_by' => 'name',
+            'search_callback' => static function (QueryBuilder $qb, SearchRequest $request) {
+                if ($group = $request->getDynamicParamValue('group')) {
+                    $qb->andWhere('entity.groupName = :group')
+                        ->setParameter('group', $group);
+                }
+            },
             'order_by' => ['name' => 'DESC'],
             'result_fields' => null,
             'group_by' => null,
             'class' => self::ITEM_GROUP_CLASS,
             'text' => 'name',
             'qb_dynamic_params' => [
-                (new DynamicParameter('group'))->where('entity.groupName = :group')->optional(true),
+                'group' => 'group',
             ],
         ]);
 
@@ -629,13 +652,21 @@ class Entity2SearchActionTest extends TestCase
             'em' => 'default',
             'max_results' => 10,
             'search_by' => 'name',
+            'search_callback' => static function (QueryBuilder $qb, SearchRequest $request) {
+                if (!$group = $request->getDynamicParamValue('group')) {
+                    $group = 'C';
+                }
+
+                $qb->andWhere('entity.groupName = :group')
+                    ->setParameter('group', $group);
+            },
             'order_by' => ['name' => 'DESC'],
             'result_fields' => null,
             'group_by' => null,
             'class' => self::ITEM_GROUP_CLASS,
             'text' => 'name',
             'qb_dynamic_params' => [
-                (new DynamicParameter('group', 'C'))->where('entity.groupName = :group')->optional(true),
+                'group' => 'group',
             ],
         ]);
 
@@ -663,13 +694,18 @@ class Entity2SearchActionTest extends TestCase
             'em' => 'default',
             'max_results' => 10,
             'search_by' => 'name',
+            'search_callback' => static function (QueryBuilder $qb, SearchRequest $request) {
+                if (!$group = $request->getDynamicParamValue('group')) {
+                    throw new \RuntimeException('Missing value for dynamic parameter "group".');
+                }
+            },
             'order_by' => ['name' => 'DESC'],
             'result_fields' => null,
             'group_by' => null,
             'class' => self::ITEM_GROUP_CLASS,
             'text' => 'name',
             'qb_dynamic_params' => [
-                (new DynamicParameter('group'))->where('entity.groupName = :group')->optional(false),
+                'group' => 'group',
             ],
         ]);
 

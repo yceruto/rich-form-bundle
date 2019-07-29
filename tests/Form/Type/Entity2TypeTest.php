@@ -24,7 +24,6 @@ use Symfony\Component\HttpFoundation\Session\Attribute\AttributeBag;
 use Symfony\Component\HttpFoundation\Session\Flash\FlashBag;
 use Symfony\Component\HttpFoundation\Session\Session;
 use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
-use Yceruto\Bundle\RichFormBundle\Doctrine\Query\DynamicParameter;
 use Yceruto\Bundle\RichFormBundle\Form\Extension\Select2TypeExtension;
 use Yceruto\Bundle\RichFormBundle\Form\Type\Entity2Type;
 use Yceruto\Bundle\RichFormBundle\Request\SearchRequest;
@@ -495,9 +494,6 @@ class Entity2TypeTest extends TypeTestCase
 
         $this->persist([$entity1, $entity2, $entity3]);
 
-        $dynamicParam = new DynamicParameter('number');
-        $dynamicParam->where('entity.phoneNumbers like :number');
-
         /** @var Entity2Type $type */
         $type = Entity2Type::class;
         $view = $this->factory->createNamed('name', $type, null, [
@@ -507,9 +503,7 @@ class Entity2TypeTest extends TypeTestCase
             'query_builder' => static function (EntityRepository $r) use (&$queryBuilder) {
                 return $queryBuilder = $r->createQueryBuilder('entity')->where('entity.phoneNumbers is not null');
             },
-            'dynamic_params' => [
-                '#id' => $dynamicParam,
-            ],
+            'dynamic_params' => ['#id' => 'number'],
             'entity_manager' => 'default',
             'search_by' => ['name'],
             'order_by' => ['name'],
@@ -522,6 +516,7 @@ class Entity2TypeTest extends TypeTestCase
             'em' => 'default',
             'max_results' => 15,
             'search_by' => ['name'],
+            'search_callback' => null,
             'order_by' => ['name' => 'ASC'],
             'result_fields' => ['phoneNumbers'],
             'group_by' => null,
@@ -530,7 +525,7 @@ class Entity2TypeTest extends TypeTestCase
                 'dql_parts' => array_filter($queryBuilder->getDQLParts()),
                 'parameters' => [],
             ],
-            'qb_dynamic_params' => [$dynamicParam],
+            'qb_dynamic_params' => ['number'],
         ];
         $queryHash = CachingFactoryDecorator::generateHash($options, 'entity2_query');
 
@@ -568,43 +563,24 @@ class Entity2TypeTest extends TypeTestCase
     }
 
     /**
-     * @expectedException \Symfony\Component\OptionsResolver\Exception\InvalidArgumentException
-     * @expectedExceptionMessage The option "dynamic_params" expects as key of the array a string (field name or CSS selector), integer given.
-     */
-    public function testDynamicParamsOptionFailsIfMissingKey(): void
-    {
-        $dynamicParam = new DynamicParameter('number');
-        $dynamicParam->where('entity.phoneNumbers like :number');
-
-        $this->factory->createNamed('name', Entity2Type::class, null, [
-            'em' => 'default',
-            'class' => SingleIntIdEntity::class,
-            'dynamic_params' => [$dynamicParam],
-        ]);
-    }
-
-    /**
      * @expectedException \Symfony\Component\OptionsResolver\Exception\InvalidOptionsException
-     * @expectedExceptionMessage Dynamic parameters must have a "where" statement.
+     * @expectedExceptionMessage Dynamic parameter name must be a string.
      */
     public function testDynamicParamsOptionFailsIfEmptyWhere(): void
     {
         $this->factory->createNamed('name', Entity2Type::class, null, [
             'em' => 'default',
             'class' => SingleIntIdEntity::class,
-            'dynamic_params' => ['#form_phone_number' => new DynamicParameter('number')],
+            'dynamic_params' => ['#form_phone_number' => null],
         ]);
     }
 
     public function testValidDynamicParamsOption(): void
     {
-        $dynamicParam = new DynamicParameter('number');
-        $dynamicParam->where('entity.phoneNumbers like :number');
-
         $view = $this->factory->createNamed('name', Entity2Type::class, null, [
             'em' => 'default',
             'class' => SingleIntIdEntity::class,
-            'dynamic_params' => ['#form_phone_number' => $dynamicParam],
+            'dynamic_params' => ['#form_phone_number' => 'number'],
         ])->createView();
 
         $expected = \json_encode(['dynamicParams' => ['#form_phone_number' => 'number']]);

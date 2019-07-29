@@ -90,35 +90,6 @@ abstract class AbstractSearchAction
             $qb = clone $qb;
         }
 
-        $dynamicParamsValues = $options->getQueryBuilderDynamicParamsValues();
-        foreach ($options->getQueryBuilderDynamicParams() as $param) {
-            $value = $dynamicParamsValues[$param->getName()] ?? null;
-
-            if (null === $value) {
-                throw new \RuntimeException(sprintf('Missing value for dynamic parameter "%s".', $param->getName()));
-            }
-
-            if ('' === $value) {
-                if ($param->isOptional() && null === $param->getValue()) {
-                    continue;
-                }
-
-                $value = $param->getValue();
-            }
-
-            foreach ($param->getWhere() as $condition) {
-                $op = key($condition);
-                $where = current($condition);
-                if ('AND' === $op) {
-                    $qb->andWhere($where);
-                } else {
-                    $qb->orWhere($where);
-                }
-            }
-
-            $qb->setParameter($param->getName(), $value, $param->getType());
-        }
-
         if (null !== $orderBy = $options->getOrderBy()) {
             $rootAlias = current($qb->getRootAliases());
             foreach ($orderBy as $field => $order) {
@@ -133,10 +104,14 @@ abstract class AbstractSearchAction
 
     private function createSearchQueryBuilder(EntityManagerInterface $em, SearchRequest $request): QueryBuilder
     {
+        $term = $request->getTerm();
         $options = $request->getOptions();
         $qb = $this->createQueryBuilder($em, $options);
 
-        $term = $request->getTerm();
+        if ($callback = $options->getSearchCallback()) {
+            $callback($qb, $request);
+        }
+
         if ('' === $term) {
             return $qb;
         }

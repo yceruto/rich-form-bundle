@@ -2,8 +2,6 @@
 
 namespace Yceruto\Bundle\RichFormBundle\Request;
 
-use Yceruto\Bundle\RichFormBundle\Doctrine\Query\DynamicParameter;
-
 class SearchOptions
 {
     private $options;
@@ -24,7 +22,7 @@ class SearchOptions
     }
 
     /**
-     * @return DynamicParameter[]
+     * @return string[]
      */
     public function getQueryBuilderDynamicParams(): array
     {
@@ -34,6 +32,16 @@ class SearchOptions
     public function getQueryBuilderDynamicParamsValues(): array
     {
         return $this->options['dynamic_params_values'];
+    }
+
+    public function getQueryBuilderDynamicParamValue(string $paramName)
+    {
+        return $this->options['dynamic_params_values'][$paramName] ?? null;
+    }
+
+    public function getSearchCallback(): ?callable
+    {
+        return $this->options['search_callback'];
     }
 
     public function getMaxResults(): int

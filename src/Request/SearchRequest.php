@@ -38,6 +38,11 @@ class SearchRequest
         $this->options = new SearchOptions($options);
     }
 
+    public function getRequest(): Request
+    {
+        return $this->request;
+    }
+
     public function getOptions(): SearchOptions
     {
         return $this->options;
@@ -51,5 +56,15 @@ class SearchRequest
     public function getPage(): int
     {
         return $this->request->get('page', 1);
+    }
+
+    public function getDynamicParamValue(string $paramName)
+    {
+        return $this->options->getQueryBuilderDynamicParamValue($paramName);
+    }
+
+    public function getDynamicParamsValues(): array
+    {
+        return $this->options->getQueryBuilderDynamicParamsValues();
     }
 }

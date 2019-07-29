@@ -21,7 +21,6 @@ use Symfony\Component\OptionsResolver\Exception\InvalidOptionsException;
 use Symfony\Component\OptionsResolver\Options;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\PropertyAccess\PropertyPath;
-use Yceruto\Bundle\RichFormBundle\Doctrine\Query\DynamicParameter;
 use Yceruto\Bundle\RichFormBundle\Form\ChoiceList\Loader\Entity2LoaderDecorator;
 use Yceruto\Bundle\RichFormBundle\Request\SearchRequest;
 
@@ -59,6 +58,7 @@ class Entity2Type extends AbstractType
             'em' => $options['entity_manager'],
             'max_results' => $options['max_results'],
             'search_by' => $options['search_by'],
+            'search_callback' => $options['search_callback'],
             'order_by' => $options['order_by'],
             'result_fields' => $options['result_fields'],
             'group_by' => $options['group_by'],
@@ -89,14 +89,13 @@ class Entity2Type extends AbstractType
     public function finishView(FormView $view, FormInterface $form, array $options): void
     {
         $dynamicParams = [];
-        /** @var DynamicParameter $dynamicParam */
-        foreach ($options['dynamic_params'] as $selector => $dynamicParam) {
+        foreach ($options['dynamic_params'] as $selector => $name) {
             if (null !== $view->parent && isset($view->parent->children[$selector]->vars['id'])) {
                 unset($dynamicParams[$selector]);
                 $selector = '#'.$view->parent->children[$selector]->vars['id'];
             }
 
-            $dynamicParams[$selector] = $dynamicParam->getName();
+            $dynamicParams[$selector] = $name;
         }
         $view->vars['attr']['data-entity2-options'] = \json_encode(['dynamicParams' => $dynamicParams]);
     }
@@ -106,16 +105,18 @@ class Entity2Type extends AbstractType
         $resolver->setDefaults([
             'entity_manager' => null,
             'search_by' => null,
+            'search_callback' => null,
             'order_by' => null,
-            'dynamic_params' => null,
+            'dynamic_params' => [],
             'result_fields' => null,
             'max_results' => $this->globalOptions['max_results'] ?? 10,
         ]);
 
         $resolver->setAllowedTypes('entity_manager', ['null', 'string']);
         $resolver->setAllowedTypes('search_by', ['null', 'string', 'string[]']);
+        $resolver->setAllowedTypes('search_callback', ['null', 'callable']);
         $resolver->setAllowedTypes('order_by', ['null', 'string', 'string[]']);
-        $resolver->setAllowedTypes('dynamic_params', ['null', DynamicParameter::class.'[]']);
+        $resolver->setAllowedTypes('dynamic_params', ['array']);
         $resolver->setAllowedTypes('result_fields', ['null', 'string', 'string[]']);
         $resolver->setAllowedTypes('max_results', ['null', 'int']);
         $resolver->setAllowedTypes('group_by', ['null', 'string', PropertyPath::class]);
@@ -123,6 +124,7 @@ class Entity2Type extends AbstractType
         $resolver->setNormalizer('expanded', \Closure::fromCallable([$this, 'extendedNormalizer']));
         $resolver->setNormalizer('order_by', \Closure::fromCallable([$this, 'orderByNormalizer']));
         $resolver->setNormalizer('choice_loader', \Closure::fromCallable([$this, 'choiceLoaderNormalizer']));
+        $resolver->setNormalizer('search_callback', \Closure::fromCallable([$this, 'searchCallbackNormalizer']));
         $resolver->setNormalizer('dynamic_params', \Closure::fromCallable([$this, 'dynamicParamsNormalizer']));
     }
 
@@ -143,18 +145,6 @@ class Entity2Type extends AbstractType
         }
 
         return $value;
-    }
-
-    private static function choiceLoaderNormalizer(Options $options, $loader): ?ChoiceLoaderInterface {
-        if (null === $loader) {
-            return null;
-        }
-
-        if (null === $options['id_reader'] || !$options['id_reader']->isSingleId()) {
-            throw new \RuntimeException('Composite identifier is not supported.');
-        }
-
-        return new Entity2LoaderDecorator($loader);
     }
 
     private static function orderByNormalizer(Options $options, $value): array
@@ -183,19 +173,42 @@ class Entity2Type extends AbstractType
         return $orderBy;
     }
 
+    private static function choiceLoaderNormalizer(Options $options, $loader): ?ChoiceLoaderInterface {
+        if (null === $loader) {
+            return null;
+        }
+
+        if (null === $options['id_reader'] || !$options['id_reader']->isSingleId()) {
+            throw new \RuntimeException('Composite identifier is not supported.');
+        }
+
+        return new Entity2LoaderDecorator($loader);
+    }
+
+    private static function searchCallbackNormalizer(Options $options, $callback): ?callable {
+        if (null === $callback) {
+            return null;
+        }
+
+        if (!\is_string($callback) || !\is_callable($callback)) {
+            throw new \RuntimeException('Expected a callable string callback function.');
+        }
+
+        return $callback;
+    }
+
     private static function dynamicParamsNormalizer(Options $options, $value): array {
         $dynamicParams = [];
-        /** @var DynamicParameter $dynamicParam */
-        foreach ((array) $value as $id => $dynamicParam) {
+        foreach ((array) $value as $id => $name) {
+            if (!\is_string($name)) {
+                throw new InvalidOptionsException('Dynamic parameter name must be a string.');
+            }
+
             if (!\is_string($id)) {
-                throw new InvalidArgumentException(sprintf('The option "dynamic_params" expects as key of the array a string (field name or CSS selector), %s given.', gettype($id)));
+                $id = $name;
             }
 
-            if ([] === $dynamicParam->getWhere()) {
-                throw new InvalidOptionsException('Dynamic parameters must have a "where" statement.');
-            }
-
-            $dynamicParams[$id] = $dynamicParam;
+            $dynamicParams[$id] = $name;
         }
 
         return $dynamicParams;
