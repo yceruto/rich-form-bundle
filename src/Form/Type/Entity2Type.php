@@ -141,7 +141,7 @@ class Entity2Type extends AbstractType
     private static function extendedNormalizer(Options $options, $value): bool
     {
         if (true === $value) {
-            throw new \RuntimeException('The "expanded" option is not supported.');
+            throw new InvalidOptionsException('The "expanded" option is not supported.');
         }
 
         return $value;
@@ -179,7 +179,7 @@ class Entity2Type extends AbstractType
         }
 
         if (null === $options['id_reader'] || !$options['id_reader']->isSingleId()) {
-            throw new \RuntimeException('Composite identifier is not supported.');
+            throw new InvalidOptionsException('Composite identifier is not supported.');
         }
 
         return new Entity2LoaderDecorator($loader);
@@ -190,8 +190,12 @@ class Entity2Type extends AbstractType
             return null;
         }
 
-        if (!\is_string($callback) || !\is_callable($callback)) {
-            throw new \RuntimeException('Expected a callable string callback function.');
+        if (\is_array($callback)) {
+            $callback = \get_class($callback[0]).'::'.$callback[1];
+        }
+
+        if (!\is_string($callback)) {
+            throw new InvalidOptionsException('Expected a callable string callback function.');
         }
 
         return $callback;

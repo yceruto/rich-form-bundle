@@ -126,7 +126,7 @@ class Entity2TypeTest extends TypeTestCase
     }
 
     /**
-     * @expectedException \RuntimeException
+     * @expectedException \Symfony\Component\OptionsResolver\Exception\InvalidOptionsException
      * @expectedExceptionMessage The "expanded" option is not supported.
      */
     public function testExpandedOptionIsNotSupported(): void
@@ -460,7 +460,7 @@ class Entity2TypeTest extends TypeTestCase
     }
 
     /**
-     * @expectedException \RuntimeException
+     * @expectedException \Symfony\Component\OptionsResolver\Exception\InvalidOptionsException
      * @expectedExceptionMessage Composite identifier is not supported.
      */
     public function testCompositeIdentifierIsNotSupported(): void
@@ -585,5 +585,58 @@ class Entity2TypeTest extends TypeTestCase
 
         $expected = \json_encode(['dynamicParams' => ['#form_phone_number' => 'number']]);
         $this->assertSame($expected, $view->vars['attr']['data-entity2-options']);
+    }
+
+    /**
+     * @expectedException \Symfony\Component\OptionsResolver\Exception\InvalidOptionsException
+     * @expectedExceptionMessage The option "search_callback" with value "foo" is expected to be of type "null" or "callable", but is of type "string"
+     */
+    public function testSearchCallbackFailsIfNotStringCallable(): void
+    {
+        $this->factory->createNamed('name', Entity2Type::class, null, [
+            'em' => 'default',
+            'class' => SingleIntIdEntity::class,
+            'search_callback' => 'foo',
+        ]);
+    }
+
+    /**
+     * @expectedException \Symfony\Component\OptionsResolver\Exception\InvalidOptionsException
+     * @expectedExceptionMessage Expected a callable string callback function.
+     */
+    public function testSearchCallbackFailsIfClosureCallable(): void
+    {
+        $this->factory->createNamed('name', Entity2Type::class, null, [
+            'em' => 'default',
+            'class' => SingleIntIdEntity::class,
+            'search_callback' => static function () {},
+        ]);
+    }
+
+    public function testSearchCallbackStringCallable(): void
+    {
+        $form = $this->factory->createNamed('name', Entity2Type::class, null, [
+            'em' => 'default',
+            'class' => SingleIntIdEntity::class,
+            'search_callback' => self::class.'::searchCallback',
+        ]);
+
+        $this->assertSame('Yceruto\Bundle\RichFormBundle\Tests\Form\Type\Entity2TypeTest::searchCallback', $form->getConfig()->getOption('search_callback'));
+    }
+
+    public function testSearchCallbackArrayCallable(): void
+    {
+        $form = $this->factory->createNamed('name', Entity2Type::class, null, [
+            'em' => 'default',
+            'class' => SingleIntIdEntity::class,
+            'search_callback' => [$this, 'searchCallback'],
+        ]);
+
+        $this->assertSame('Yceruto\Bundle\RichFormBundle\Tests\Form\Type\Entity2TypeTest::searchCallback', $form->getConfig()->getOption('search_callback'));
+    }
+
+    public static function searchCallback()
+    {
+        // no-op
     }
 }
