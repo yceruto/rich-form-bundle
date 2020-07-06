@@ -17,7 +17,7 @@ matrix:
     fast_finish: true
     include:
           # Minimum supported dependencies with the latest and oldest PHP version
-        - php: 7.3
+        - php: 7.4
           env: COMPOSER_FLAGS="--prefer-stable --prefer-lowest" SYMFONY_DEPRECATIONS_HELPER="2"
         - php: 7.1
           env: COMPOSER_FLAGS="--prefer-stable --prefer-lowest" SYMFONY_DEPRECATIONS_HELPER="2"
@@ -26,6 +26,7 @@ matrix:
         - php: 7.1
         - php: 7.2
         - php: 7.3
+        - php: 7.4
 
           # Latest commit to master
         - php: 7.3
@@ -40,7 +41,7 @@ before_install:
     - if ! [ -z "$STABILITY" ]; then composer config minimum-stability ${STABILITY}; fi;
 
 install:
-    - composer update ${COMPOSER_FLAGS} --prefer-dist --no-interaction
+    - composer update ${COMPOSER_FLAGS} --prefer-source --no-interaction
     - ./phpunit install
 
 script:

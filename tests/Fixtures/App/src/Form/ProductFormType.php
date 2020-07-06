@@ -23,7 +23,8 @@ class ProductFormType extends AbstractType
             ->add('name')
             ->add('type', EntityType::class, [
                 'class' => ProductType::class,
-                'placeholder' => 'None',
+                //'placeholder' => 'None',
+                'required' => false,
             ])
             ->add('category', Entity2Type::class, [
                 'class' => Category::class,
@@ -37,6 +38,9 @@ class ProductFormType extends AbstractType
                     'result_template' => '<strong>{{ text }}</strong><br><small>{{ description }}</small>',
                     'selection_template' => '<strong>{{ text }}</strong> <small>{{ description }}</small>',
                 ],
+            ])
+            ->add('category', EntityType::class, [
+                'class' => Category::class,
             ])
             ->add('tags', Entity2Type::class, [
                 'class' => Tag::class,

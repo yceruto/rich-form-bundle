@@ -23,6 +23,11 @@ class AppKernel extends \Symfony\Component\HttpKernel\Kernel
         $loader->load(__DIR__.'/config/config.yaml');
     }
 
+    public function getProjectDir()
+    {
+        return __DIR__;
+    }
+
     public function getCacheDir()
     {
         return __DIR__.'/../../../build/cache/'.$this->getEnvironment();

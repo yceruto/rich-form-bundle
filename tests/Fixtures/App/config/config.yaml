@@ -6,14 +6,14 @@ imports:
 
 parameters:
     kernel.name: 'AppKernel'
-    database_path: '%kernel.root_dir%/../../../build/test.db'
+    database_path: '%kernel.project_dir%/../../../build/test.db'
 
 framework:
     secret: secret
     default_locale: en
     test: ~
     router:
-        resource: '%kernel.root_dir%/config/routes.yaml'
+        resource: '%kernel.project_dir%/config/routes.yaml'
     form: true
     session:
         storage_id: session.storage.mock_file
@@ -29,13 +29,13 @@ doctrine:
             App\Test:
                 is_bundle: false
                 type: annotation
-                dir: '%kernel.root_dir%/src/Entity/'
+                dir: '%kernel.project_dir%/src/Entity/'
                 prefix: 'App\Test\Entity'
                 alias: 'App\Test'
 
 twig:
     strict_variables: true
     exception_controller: ~
-    default_path: '%kernel.root_dir%/templates'
+    default_path: '%kernel.project_dir%/templates'
     form_themes:
         - '@RichForm/form/fields.html.twig'

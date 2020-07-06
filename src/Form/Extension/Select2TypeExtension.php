@@ -93,16 +93,6 @@ class Select2TypeExtension extends AbstractTypeExtension
         ]);
     }
 
-    /**
-     * Symfony 3.4 Compatibility
-     */
-    public function getExtendedType(): string
-    {
-        foreach (static::getExtendedTypes() as $extendedType) {
-            return $extendedType;
-        }
-    }
-
     public static function getExtendedTypes(): iterable
     {
         return [Entity2Type::class];
@@ -125,7 +115,7 @@ class Select2TypeExtension extends AbstractTypeExtension
 
             /** @var ChoiceView $choiceView */
             foreach ($resultFields as $fieldName => $fieldValuePath) {
-                $value = $this->propertyAccessor->getValue($choiceView->data, $fieldValuePath);
+                $value = $choiceView->data ? $this->propertyAccessor->getValue($choiceView->data, $fieldValuePath) : null;
 
                 if (\is_object($value)) {
                     $value = (string) $value;
