@@ -29,7 +29,7 @@ matrix:
         - php: 7.4
 
           # Latest commit to master
-        - php: 7.3
+        - php: 7.4
           env: STABILITY="dev"
 
     allow_failures:
