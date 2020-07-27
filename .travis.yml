@@ -36,17 +36,15 @@ matrix:
         - env: STABILITY="dev"
 
 before_install:
-    - LATEST_CHROMEDRIVER_VERSION=`curl -s "https://chromedriver.storage.googleapis.com/LATEST_RELEASE"`
-    - curl "https://chromedriver.storage.googleapis.com/${LATEST_CHROMEDRIVER_VERSION}/chromedriver_linux64.zip" -O
-    - unzip chromedriver_linux64.zip -d ~/bin
     - phpenv config-rm xdebug.ini
     - if ! [ -z "$STABILITY" ]; then composer config minimum-stability ${STABILITY}; fi;
 
 install:
+    - composer update ${COMPOSER_FLAGS} --prefer-source --no-interaction
+    - ./vendor/symfony/panther/chromedriver-bin/update.sh
+    - ./phpunit install
     - google-chrome --version
     - chromedriver --version
-    - composer update ${COMPOSER_FLAGS} --prefer-source --no-interaction
-    - ./phpunit install
 
 script:
     - composer validate --strict --no-check-lock
