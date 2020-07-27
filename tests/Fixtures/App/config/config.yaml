@@ -14,6 +14,7 @@ framework:
     test: ~
     router:
         resource: '%kernel.project_dir%/config/routes.yaml'
+        utf8: true
     form: true
     session:
         storage_id: session.storage.mock_file
