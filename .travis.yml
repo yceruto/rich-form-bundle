@@ -36,7 +36,7 @@ matrix:
         - env: STABILITY="dev"
 
 before_install:
-    - chromedriver-update 80
+    - chromedriver-update
     - phpenv config-rm xdebug.ini
     - if ! [ -z "$STABILITY" ]; then composer config minimum-stability ${STABILITY}; fi;
 
