@@ -36,12 +36,12 @@ matrix:
         - env: STABILITY="dev"
 
 before_install:
-    - chromedriver-update
     - phpenv config-rm xdebug.ini
     - if ! [ -z "$STABILITY" ]; then composer config minimum-stability ${STABILITY}; fi;
 
 install:
     - google-chrome --version
+    - chromedriver --version
     - composer update ${COMPOSER_FLAGS} --prefer-source --no-interaction
     - ./phpunit install
 
