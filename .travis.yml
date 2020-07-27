@@ -41,7 +41,7 @@ before_install:
 
 install:
     - composer update ${COMPOSER_FLAGS} --prefer-source --no-interaction
-    - ./vendor/symfony/panther/chromedriver-bin/update.sh
+    - mv ./tests/update.sh ./vendor/symfony/panther/chromedriver-bin/update.sh
     - ./phpunit install
 
 script:
