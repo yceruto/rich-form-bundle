@@ -2,6 +2,9 @@ language: php
 
 addons:
     chrome: stable
+    apt:
+        packages:
+            - chromium-chromedriver
 
 cache:
     directories:
