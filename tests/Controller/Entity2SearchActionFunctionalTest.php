@@ -55,8 +55,8 @@ class Entity2SearchActionFunctionalTest extends PantherTestCase
         // Check success
         $client->waitFor('.product-list');
         $this->assertCount(1, $crawler->filter('tbody > tr'));
-        $this->assertSame('Category 24', $crawler->filter('tbody > tr > td')->getElement(1)->getText());
-        $this->assertSame('Tag 11, Tag 20', $crawler->filter('tbody > tr > td')->getElement(2)->getText());
+        $this->assertSame('Category 24', $crawler->filter('tbody > tr > td')->getElement(2)->getText());
+        $this->assertSame('Tag 11, Tag 20', $crawler->filter('tbody > tr > td')->getElement(3)->getText());
     }
 
     public function testEditProductWithSelect2SearchQuery(): void
@@ -88,8 +88,8 @@ class Entity2SearchActionFunctionalTest extends PantherTestCase
         // Check success
         $client->waitFor('.product-list');
         $this->assertCount(1, $crawler->filter('tbody > tr'));
-        $this->assertSame('Category 10', $crawler->filter('tbody > tr > td')->getElement(1)->getText());
-        $this->assertSame('Tag 20, Tag 32', $crawler->filter('tbody > tr > td')->getElement(2)->getText());
+        $this->assertSame('Category 10', $crawler->filter('tbody > tr > td')->getElement(2)->getText());
+        $this->assertSame('Tag 20, Tag 32', $crawler->filter('tbody > tr > td')->getElement(3)->getText());
     }
 
     public function testMaxResultsAndInfinityScroll(): void
