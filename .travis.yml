@@ -1,8 +1,5 @@
 language: php
 
-addons:
-    chrome: stable
-
 cache:
     directories:
         - .composer/cache/files
@@ -12,18 +9,18 @@ env:
     global:
         # needed to avoid some hard to fix deprecations
         - SYMFONY_DEPRECATIONS_HELPER="8"
+        - CHROME_VERSION="80.0.3987.163-1"
 
 matrix:
     fast_finish: true
     include:
           # Minimum supported dependencies with the latest and oldest PHP version
-        - php: 7.3
+        - php: 7.4
           env: COMPOSER_FLAGS="--prefer-stable --prefer-lowest" SYMFONY_DEPRECATIONS_HELPER="2"
-        - php: 7.1
+        - php: 7.2
           env: COMPOSER_FLAGS="--prefer-stable --prefer-lowest" SYMFONY_DEPRECATIONS_HELPER="2"
 
           # Test the latest stable release
-        - php: 7.1
         - php: 7.2
         - php: 7.3
         - php: 7.4
@@ -37,6 +34,8 @@ matrix:
         - env: STABILITY="dev"
 
 before_install:
+    - wget --no-verbose -O /tmp/chrome.deb http://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-stable/google-chrome-stable_${CHROME_VERSION}_amd64.deb
+    - sudo apt install -y /tmp/chrome.deb --allow-downgrades
     - phpenv config-rm xdebug.ini
     - if ! [ -z "$STABILITY" ]; then composer config minimum-stability ${STABILITY}; fi;
 

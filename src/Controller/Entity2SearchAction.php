@@ -2,8 +2,8 @@
 
 namespace Yceruto\Bundle\RichFormBundle\Controller;
 
-use Doctrine\Common\Persistence\ManagerRegistry;
 use Doctrine\ORM\Tools\Pagination\Paginator;
+use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bridge\Doctrine\Form\ChoiceList\IdReader;
 use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 use Yceruto\Bundle\RichFormBundle\Request\SearchOptions;

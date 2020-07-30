@@ -20,7 +20,7 @@ class Entity2LoaderDecorator implements ChoiceLoaderInterface
         $this->decoratedLoader = $decoratedLoader;
     }
 
-    public function loadChoiceList($value = null)
+    public function loadChoiceList(callable $value = null)
     {
         if (null !== $this->choiceList && $this->cached) {
             return $this->choiceList;
@@ -31,7 +31,7 @@ class Entity2LoaderDecorator implements ChoiceLoaderInterface
         return $this->choiceList = new ArrayChoiceList($this->choices, $value);
     }
 
-    public function loadChoicesForValues(array $values, $value = null): array
+    public function loadChoicesForValues(array $values, callable $value = null): array
     {
         if ($this->choices !== $choices = $this->decoratedLoader->loadChoicesForValues($values, $value)) {
             $this->cached = false;
@@ -40,9 +40,11 @@ class Entity2LoaderDecorator implements ChoiceLoaderInterface
         return $this->choices = $choices;
     }
 
-    public function loadValuesForChoices(array $choices, $value = null): array
+    public function loadValuesForChoices(array $choices, callable $value = null): array
     {
-        if ([] === $values = $this->decoratedLoader->loadValuesForChoices($choices, $value)) {
+        $values = $this->decoratedLoader->loadValuesForChoices($choices, $value);
+
+        if ([] === $values || [''] === $values) {
             $newChoices = [];
         } else {
             $newChoices = $choices;

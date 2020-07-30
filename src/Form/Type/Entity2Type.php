@@ -7,15 +7,10 @@ use Doctrine\ORM\QueryBuilder;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\ChoiceList\Factory\CachingFactoryDecorator;
-use Symfony\Component\Form\ChoiceList\LazyChoiceList;
 use Symfony\Component\Form\ChoiceList\Loader\ChoiceLoaderInterface;
-use Symfony\Component\Form\FormBuilderInterface;
-use Symfony\Component\Form\FormEvent;
-use Symfony\Component\Form\FormEvents;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\Form\FormView;
 use Symfony\Component\HttpFoundation\Session\Session;
-use Symfony\Component\HttpKernel\Kernel;
 use Symfony\Component\OptionsResolver\Exception\InvalidArgumentException;
 use Symfony\Component\OptionsResolver\Exception\InvalidOptionsException;
 use Symfony\Component\OptionsResolver\Options;
@@ -33,22 +28,6 @@ class Entity2Type extends AbstractType
     {
         $this->session = $session;
         $this->globalOptions = $globalOptions;
-    }
-
-    public function buildForm(FormBuilderInterface $builder, array $options): void
-    {
-        if (Kernel::MAJOR_VERSION < 4) {
-            // Avoid caching in LazyChoiceList - Symfony 3.4
-            $builder->addEventListener(FormEvents::PRE_SUBMIT, static function (FormEvent $event) {
-                $choiceList = $event->getForm()->getConfig()->getAttribute('choice_list');
-                if ($choiceList instanceof LazyChoiceList) {
-                    $loaded = (new \ReflectionObject($choiceList))->getProperty('loaded');
-                    $loaded->setAccessible(true);
-                    $loaded->setValue($choiceList, false);
-                    $loaded->setAccessible(false);
-                }
-            });
-        }
     }
 
     public function buildView(FormView $view, FormInterface $form, array $options): void

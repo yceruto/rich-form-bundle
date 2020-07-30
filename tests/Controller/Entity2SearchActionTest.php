@@ -2,7 +2,7 @@
 
 namespace Yceruto\Bundle\RichFormBundle\Tests\Controller;
 
-use Doctrine\Common\Persistence\ManagerRegistry;
+use Doctrine\Persistence\ManagerRegistry;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\ORM\Tools\SchemaTool;
@@ -127,22 +127,20 @@ class Entity2SearchActionTest extends TestCase
         // be managed!
     }
 
-    /**
-     * @expectedException \RuntimeException
-     * @expectedExceptionMessage Missing hash.
-     */
     public function testMissingHash(): void
     {
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Missing hash.');
+
         $request = Request::create('/rich-form/entity2/search?term=foo');
         $this->controller->__invoke($request);
     }
 
-    /**
-     * @expectedException \RuntimeException
-     * @expectedExceptionMessage Missing session.
-     */
     public function testMissingSession(): void
     {
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Missing session.');
+
         $request = Request::create('/rich-form/entity2/{hash}/search?term=foo');
         $request->attributes->set('hash', 'hash');
         $this->session = null;
@@ -187,7 +185,7 @@ class Entity2SearchActionTest extends TestCase
         $response = $this->controller->__invoke($request, 'hash');
 
         $this->assertInstanceOf(JsonResponse::class, $response);
-        $this->assertSame('{"results":[{"id":1,"text":"Foo"},{"id":2,"text":"Bar"}],"has_next_page":false}', $response->getContent());
+        $this->assertSame('{"results":[{"id":"1","text":"Foo"},{"id":"2","text":"Bar"}],"has_next_page":false}', $response->getContent());
     }
 
     public function testMatchedSearchQuery(): void
@@ -203,7 +201,7 @@ class Entity2SearchActionTest extends TestCase
 
         $response = $this->controller->__invoke($request, 'hash');
         $this->assertInstanceOf(JsonResponse::class, $response);
-        $this->assertSame('{"results":[{"id":1,"text":"Foo"}],"has_next_page":false}', $response->getContent());
+        $this->assertSame('{"results":[{"id":"1","text":"Foo"}],"has_next_page":false}', $response->getContent());
     }
 
     public function testUnmatchedSearchQuery(): void
@@ -247,7 +245,7 @@ class Entity2SearchActionTest extends TestCase
 
         $response = $this->controller->__invoke($request, 'hash');
         $this->assertInstanceOf(JsonResponse::class, $response);
-        $this->assertSame('{"results":[{"id":2,"text":"Foo"}],"has_next_page":false}', $response->getContent());
+        $this->assertSame('{"results":[{"id":"2","text":"Foo"}],"has_next_page":false}', $response->getContent());
     }
 
     public function testSearchByWithAssociationEntity(): void
@@ -276,7 +274,7 @@ class Entity2SearchActionTest extends TestCase
 
         $response = $this->controller->__invoke($request, 'hash');
         $this->assertInstanceOf(JsonResponse::class, $response);
-        $this->assertSame('{"results":[{"id":2,"text":"Bar"}],"has_next_page":false}', $response->getContent());
+        $this->assertSame('{"results":[{"id":"2","text":"Bar"}],"has_next_page":false}', $response->getContent());
     }
 
     public function testSearchByWithAssociationEntityField(): void
@@ -305,7 +303,7 @@ class Entity2SearchActionTest extends TestCase
 
         $response = $this->controller->__invoke($request, 'hash');
         $this->assertInstanceOf(JsonResponse::class, $response);
-        $this->assertSame('{"results":[{"id":2,"text":"Bar"}],"has_next_page":false}', $response->getContent());
+        $this->assertSame('{"results":[{"id":"2","text":"Bar"}],"has_next_page":false}', $response->getContent());
     }
 
     public function testSearchByWithEmbeddedEntityField(): void
@@ -334,7 +332,7 @@ class Entity2SearchActionTest extends TestCase
 
         $response = $this->controller->__invoke($request, 'hash');
         $this->assertInstanceOf(JsonResponse::class, $response);
-        $this->assertSame('{"results":[{"id":2,"text":"Bar"}],"has_next_page":false}', $response->getContent());
+        $this->assertSame('{"results":[{"id":"2","text":"Bar"}],"has_next_page":false}', $response->getContent());
     }
 
     public function testResultFieldsWithEmbeddedEntityField(): void
@@ -368,7 +366,7 @@ class Entity2SearchActionTest extends TestCase
 
         $response = $this->controller->__invoke($request, 'hash');
         $this->assertInstanceOf(JsonResponse::class, $response);
-        $this->assertSame('{"results":[{"id":2,"text":"Bar","data":{"contact":"0987654321","contact_phone":"0987654321"}}],"has_next_page":false}', $response->getContent());
+        $this->assertSame('{"results":[{"id":"2","text":"Bar","data":{"contact":"0987654321","contact_phone":"0987654321"}}],"has_next_page":false}', $response->getContent());
     }
 
     public function testCustomResultFields(): void
@@ -395,7 +393,7 @@ class Entity2SearchActionTest extends TestCase
 
         $response = $this->controller->__invoke($request, 'hash');
         $this->assertInstanceOf(JsonResponse::class, $response);
-        $this->assertSame('{"results":[{"id":1,"text":"Foo","data":{"groupName":"F"}}],"has_next_page":false}', $response->getContent());
+        $this->assertSame('{"results":[{"id":"1","text":"Foo","data":{"groupName":"F"}}],"has_next_page":false}', $response->getContent());
     }
 
     public function testGroupByResult(): void
@@ -423,7 +421,7 @@ class Entity2SearchActionTest extends TestCase
 
         $response = $this->controller->__invoke($request, 'hash');
         $this->assertInstanceOf(JsonResponse::class, $response);
-        $this->assertSame('{"results":[{"text":"A","children":[{"id":1,"text":"Foo"},{"id":2,"text":"Bar"}]},{"text":"B","children":[{"id":3,"text":"Baz"}]}],"has_next_page":false}', $response->getContent());
+        $this->assertSame('{"results":[{"text":"A","children":[{"id":"1","text":"Foo"},{"id":"2","text":"Bar"}]},{"text":"B","children":[{"id":"3","text":"Baz"}]}],"has_next_page":false}', $response->getContent());
     }
 
     public function testOrderByResult(): void
@@ -451,7 +449,7 @@ class Entity2SearchActionTest extends TestCase
 
         $response = $this->controller->__invoke($request, 'hash');
         $this->assertInstanceOf(JsonResponse::class, $response);
-        $this->assertSame('{"results":[{"id":3,"text":"C"},{"id":2,"text":"B"},{"id":1,"text":"A"}],"has_next_page":false}', $response->getContent());
+        $this->assertSame('{"results":[{"id":"3","text":"C"},{"id":"2","text":"B"},{"id":"1","text":"A"}],"has_next_page":false}', $response->getContent());
     }
 
     public function testChainOrderByResult(): void
@@ -478,7 +476,7 @@ class Entity2SearchActionTest extends TestCase
 
         $response = $this->controller->__invoke($request, 'hash');
         $this->assertInstanceOf(JsonResponse::class, $response);
-        $this->assertSame('{"results":[{"id":2,"text":"Bar"},{"id":1,"text":"Foo"}],"has_next_page":false}', $response->getContent());
+        $this->assertSame('{"results":[{"id":"2","text":"Bar"},{"id":"1","text":"Foo"}],"has_next_page":false}', $response->getContent());
     }
 
     public function testCustomQueryBuilder(): void
@@ -516,7 +514,7 @@ class Entity2SearchActionTest extends TestCase
 
         $response = $this->controller->__invoke($request, 'hash');
         $this->assertInstanceOf(JsonResponse::class, $response);
-        $this->assertSame('{"results":[{"id":2,"text":"Foo2"}],"has_next_page":false}', $response->getContent());
+        $this->assertSame('{"results":[{"id":"2","text":"Foo2"}],"has_next_page":false}', $response->getContent());
     }
 
     public function testPagination(): void
@@ -546,7 +544,7 @@ class Entity2SearchActionTest extends TestCase
         $response = $this->controller->__invoke($request, 'hash');
 
         $this->assertInstanceOf(JsonResponse::class, $response);
-        $this->assertSame('{"results":[{"id":1,"text":"Foo"}],"has_next_page":true}', $response->getContent());
+        $this->assertSame('{"results":[{"id":"1","text":"Foo"}],"has_next_page":true}', $response->getContent());
 
         $request = Request::create('/rich-form/entity2/{hash}/search?term=foo&page=2');
         $request->attributes->set('hash', 'hash');
@@ -555,7 +553,7 @@ class Entity2SearchActionTest extends TestCase
 
         $response = $this->controller->__invoke($request, 'hash');
 
-        $this->assertSame('{"results":[{"id":2,"text":"Foobar"}],"has_next_page":true}', $response->getContent());
+        $this->assertSame('{"results":[{"id":"2","text":"Foobar"}],"has_next_page":true}', $response->getContent());
 
         $request = Request::create('/rich-form/entity2/{hash}/search?term=foo&page=3');
         $request->attributes->set('hash', 'hash');
@@ -598,7 +596,7 @@ class Entity2SearchActionTest extends TestCase
 
         $response = $this->controller->__invoke($request, 'hash');
         $this->assertInstanceOf(JsonResponse::class, $response);
-        $this->assertSame('{"results":[{"id":2,"text":"Bar"}],"has_next_page":false}', $response->getContent());
+        $this->assertSame('{"results":[{"id":"2","text":"Bar"}],"has_next_page":false}', $response->getContent());
     }
 
     public function testIgnoreOptionalDynamicParamWithoutDefault(): void
@@ -634,7 +632,7 @@ class Entity2SearchActionTest extends TestCase
 
         $response = $this->controller->__invoke($request, 'hash');
         $this->assertInstanceOf(JsonResponse::class, $response);
-        $this->assertSame('{"results":[{"id":1,"text":"Foo"},{"id":3,"text":"Baz"},{"id":2,"text":"Bar"}],"has_next_page":false}', $response->getContent());
+        $this->assertSame('{"results":[{"id":"1","text":"Foo"},{"id":"3","text":"Baz"},{"id":"2","text":"Bar"}],"has_next_page":false}', $response->getContent());
     }
 
     public function testOptionalDynamicParamEmptyValueWithDefault(): void
@@ -672,15 +670,14 @@ class Entity2SearchActionTest extends TestCase
 
         $response = $this->controller->__invoke($request, 'hash');
         $this->assertInstanceOf(JsonResponse::class, $response);
-        $this->assertSame('{"results":[{"id":3,"text":"Baz"}],"has_next_page":false}', $response->getContent());
+        $this->assertSame('{"results":[{"id":"3","text":"Baz"}],"has_next_page":false}', $response->getContent());
     }
 
-    /**
-     * @expectedException \RuntimeException
-     * @expectedExceptionMessage Missing value for dynamic parameter "group".
-     */
     public function testFailsWithMissingMandatoryDynamicParam(): void
     {
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Missing value for dynamic parameter "group".');
+
         $entity1 = new GroupableEntity(1, 'Foo', 'A');
         $entity2 = new GroupableEntity(2, 'Bar', 'B');
         $entity3 = new GroupableEntity(3, 'Baz', 'C');

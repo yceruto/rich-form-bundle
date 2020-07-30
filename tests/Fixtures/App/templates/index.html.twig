@@ -7,6 +7,7 @@
         <thead>
         <tr>
             <th>Name</th>
+            <th>Type</th>
             <th>Category</th>
             <th>Tags</th>
             <th>Actions</th>
@@ -16,6 +17,7 @@
         {% for product in products %}
             <tr>
                 <td>{{ product.name }}</td>
+                <td>{{ product.type }}</td>
                 <td>{{ product.category }}</td>
                 <td>{{ product.tags|join(', ') }}</td>
                 <td>
