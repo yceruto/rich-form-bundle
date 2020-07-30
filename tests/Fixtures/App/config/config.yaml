@@ -35,8 +35,6 @@ doctrine:
                 alias: 'App\Test'
 
 twig:
-    strict_variables: true
-    exception_controller: ~
     default_path: '%kernel.project_dir%/templates'
     form_themes:
         - '@RichForm/form/fields.html.twig'

@@ -21,6 +21,10 @@ class ProductFormType extends AbstractType
     {
         $builder
             ->add('name')
+            ->add('type', EntityType::class, [
+                'class' => ProductType::class,
+                'placeholder' => 'None',
+            ])
             ->add('category', Entity2Type::class, [
                 'class' => Category::class,
                 'query_builder' => static function (EntityRepository $r) {
@@ -38,9 +42,6 @@ class ProductFormType extends AbstractType
                 'class' => Tag::class,
                 'multiple' => true,
                 'required' => false,
-            ])
-            ->add('type', EntityType::class, [
-                'class' => ProductType::class,
             ])
         ;
     }
