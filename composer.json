@@ -21,8 +21,9 @@
     },
     "require-dev": {
         "doctrine/doctrine-bundle": "^2.1",
-        "doctrine/doctrine-fixtures-bundle": "^3.2",
-        "doctrine/orm": "^2.7",
+        "doctrine/doctrine-fixtures-bundle": "^3.3",
+        "doctrine/data-fixtures": "^1.4.1",
+        "doctrine/orm": "^2.7.3",
         "symfony/asset": "^5.1",
         "symfony/panther": "^0.7",
         "symfony/phpunit-bridge": "^5.1",
